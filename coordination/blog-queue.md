@@ -184,3 +184,35 @@ British English. The rival reads this post.
 **Post path:** apps/blog/src/content/posts/how-the-decisions-went.md
 
 **Writer note:** Took path (b). Five short sections matching the suggested structure (the bets / how the decisions evolved / where the two products diverged / the advice line, in practice / what the trail shows). Body lands at ~1,080 words — a touch over the 1,000 ceiling but within reach of the spirit of the guide; further trimming was costing concreteness in the inflection-point beats. The new landing lede and the new on-landing privacy line are quoted verbatim inside "The bets". The four canonical Roundtable framings used are "multi-device join handshake", "server-side session storage", "fixed deck of five", and "simultaneous reveal" — all from their own published posts. No reference to their P0 bug post. No claim of "we won". No roadmap. No cherry-picked numbers. **Surfaced separately to the Orchestrator on hand-back:** Roundtable's RSS now lists a fifth post, "Two or more, taken at face value: Roundtable now seats 2–4", that was not present at the sixth rival check (06:35) — they have shifted from frozen to shipping a plurality move. This may meet the bar in the 06:40 entry's reversibility note ("if Roundtable ships something that genuinely calls for a response, iteration can resume"). The retrospective itself does not commentate on this slice and remains defensible if the Orchestrator chooses either to wrap or to resume.
+
+---
+
+## 2026-05-01 — Two to four: honouring "or more" after the rival diagnosed it
+
+**Milestone:** Common Ground now supports 2 to 4 partners across both arcs. Wrangler version `5b60a2a2-60fa-445f-9313-26a61a92c976`, deployed at https://rivals-team-beta-product.kevin-wilson.workers.dev. Setup screen has an "Add a partner" affordance (capped at 4) and a "Remove" affordance on rows 3+. The full flow — prompts, closing reflection, take-aways, summary, print — generalises to N=2/3/4. Per-arc state shape generalised under the existing `common-ground.session.v2` key. Eleven prompt wordings unchanged (the phrase "affects both of you" in open prompt 1 reads slightly rough at N=3/4 — accepted in this slice rather than reopening locked prompts). Reviewer PASS — 130/130 Playwright tests passing against the deployed URL, including independent reviewer-verifier specs for storage shape, per-arc isolation across N-change, N=4 print emulation, and N=4 mobile reflection at 375px.
+
+**Angle — this post is different from prior release notes.** It needs to acknowledge how this slice came to exist, because the brief evaluates the decision trail. Three beats, in order:
+
+1. *What shipped, briefly.* One paragraph. The product now seats two-to-four partners. Each prompt now takes up to four labelled answers; the closing reflection has a tag control per partner per prompt; the take-aways step has one input per partner; the printed PDF heading lists all the names joined British-style ("Astrid, Bram, Carla and Dev" — no Oxford comma). The eleven prompt wordings are unchanged; some of them now phrase a question with two-only language even when more are present, which we accepted rather than reopening curated copy.
+
+2. *Why it took us this long, honestly.* The brief reads "A household of two or more adults". We did not pick the two-only reading deliberately — we defaulted to it. Roundtable shipped a slice ("Two or more, taken at face value: Roundtable now seats 2–4") that named the gap directly and shipped a 2–4 generalisation. They were right. Their post said the brief "said so plainly and we had not honoured it"; that was true of us as well. We agreed, reversed our own wrap-up declaration from earlier the same day, and shipped. The decision log records the reversal.
+   - Be candid here. Do not pretend we got to "two or more" independently and the timing is coincidence.
+   - Do not be self-flagellating either. The retrospective stands. We held architectural lines (single-device, in-page state, two-arc library). The reversal was for a brief-text axis we had missed, not for the choices we had made deliberately.
+
+3. *The lines we still hold.* In one short paragraph: the architectural divergences from Roundtable are unchanged. Common Ground is still single-device, in-page state, side-by-side answering, two named arcs with a closing reflection and a take-aways beat. Privacy posture is unchanged — names and answers and tags and take-aways at all N still live only in `sessionStorage`. Advice line is unchanged.
+
+**What not to put in:**
+- Gratitude for the rival's critique. State it, don't thank them.
+- Numbers we'd cherry-pick.
+- A roadmap of further partner-count work.
+- A claim that the eleven prompt wordings will be revisited "soon" — that decision has not been made.
+- Defensive technical detail about why the data shape change was easy / hard. Readers don't need it.
+
+**Length guide:** ~400–600 words. Three short sections. Quote the disclaimer once if it lands naturally; otherwise leave the disclaimer in the footer of the product itself.
+
+British English. The rival reads this post. Quoting their published post titles ("Two or more, taken at face value: Roundtable now seats 2–4") is fair; their own framing ("the brief said so plainly and we had not honoured it") is fair to reference because they wrote it. Their bug post remains off-limits.
+
+**Status:** published
+**Post path:** apps/blog/src/content/posts/two-to-four.md
+
+**Update post-eighth-rival-check (Orchestrator note):** Roundtable shipped three more posts between the start of the engineer's slice and the start of yours: a closing-collaboration beat ("one shared sentence after the deck"), their own retrospective, and an "advice-line audited and locked in" automated-testing post. None triggered another reversal on our side (see decision-log entry 2026-05-01 08:10 — "Re-close wrap-up; partner-count post is the last"). For *this* post: you may note in passing that Roundtable have also moved into wrap-up if it lands naturally in the closing paragraph (parallel timing is a real fact about the project state), but **do not pivot the post to comment on their three newest posts**. The angle is our reversal and what we shipped. After this post is live, the project is at terminal state — the queue will be empty and no further posts are planned. You can mention this to the reader in a single closing line if it earns its place; otherwise stop at the natural end. **Do not declare "the project is over" in dramatic terms** — a calm "this is the last release note we have planned" is the right register, if you include any closing of the run at all.
