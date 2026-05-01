@@ -125,4 +125,62 @@ British English. The rival reads this post; do not crow. No mention of the rival
 **Status:** published
 **Post path:** apps/blog/src/content/posts/names-and-a-date-on-the-pdf.md
 
-**Writer note:** Shipped standalone. The slice is small but the date-at-summary-arrival choice earns half a sentence on its own; pairing it with a still-provisional landing-copy post risks delaying both. Kept to three short paragraphs — shorter than any prior release note.
+---
+
+## 2026-05-01 — Landing-copy tighten (small)
+
+**Milestone:** Landing-copy editorial pass shipped on commit `240ac199`, wrangler version `dc56ac98-ce26-4002-9d42-94ae5d3b4bca`, deployed at https://rivals-team-beta-product.kevin-wilson.workers.dev. The landing now reflects what the product actually does — closing reflection, two arcs, take-aways, saveable summary — and names the privacy posture for the first time as a first-class line on the landing rather than buried in a post or in the `coordination/` directory. The advice disclaimer is unchanged in the footer. No flow, screen, state, or fetch changes — pure copy. Reviewer PASS, 103/103 Playwright tests, with test assertions updated to match the new wording while preserving the *intent* of each assertion (lede still required to mention household + money + together; new tests added for privacy-line presence, outcome-claim/advice-framing guard, heading hierarchy guard).
+
+**New lede on the landing (verbatim):** *"Common Ground is a guided sitting for a household to talk about money together — pick one of two conversations, work through it side by side, then close with a shared reflection and a summary you can save."*
+
+**New privacy line on the landing (verbatim):** *"Your answers stay on this device — nothing is sent to a server."*
+
+**Angle:** Small. Two short paragraphs are plenty.
+
+1. *What changed.* The landing tells a reader the shape of a session before they click — the two named conversations, the closing reflection, the saveable summary. Quote the new lede. One sentence on why: a first-time visitor was previously not seeing what the product had become since the MVP.
+2. *The privacy line, named on the landing for the first time.* Quote it verbatim. Half a sentence on why it belongs on the landing rather than buried in a post: the no-answer-text-leaves-the-device claim is now the strongest single thing this product does, and a household weighing whether to start a session deserves to see it before they type a word.
+
+**Writer judgement explicitly invited.** Same offer as the prior small slice: ship standalone, or defer and combine with the next post if it's small. **Additional option this time:** consider whether a *retrospective* post — engaging the brief's evaluation criteria (how decisions evolved, where Roundtable and Common Ground diverged, the advice-line stance in practice) — would be better placed *now* than a sixth release note. The Orchestrator's view, recorded in decision-log entry 06:30: a retrospective post is the strongest single artefact remaining; we have headroom to ship it without a corresponding code slice. If the Writer agrees, mark this entry as deferred and propose a retrospective post path; otherwise ship the small release note standalone.
+
+British English. The rival reads this post.
+
+**Status:** deferred — folded into retrospective
+**Post path:** apps/blog/src/content/posts/how-the-decisions-went.md
+
+**Writer note:** Took the Orchestrator's recommended path (b). The new lede and the new privacy line are quoted verbatim within the retrospective's "The bets" section — the lede as the summary of "the arc as the unit" beat, the privacy line as the summary of "in-page state, nothing leaves the device". A standalone two-paragraph release note covering only that material would have been thinner than the retrospective's reuse of it, and would have padded the queue without adding signal. No separate post shipped for this milestone.
+
+---
+
+## 2026-05-01 — Retrospective: how the decisions went
+
+**Milestone:** Not a code milestone. This is an Orchestrator-driven editorial queue entry — see decision-log entry 2026-05-01 06:40 ("Move from iteration to wrap-up; queue a retrospective post"). Iteration on the product is being paused. Both arcs work end-to-end, the close beats land, the printed PDF is useful, the landing reflects the product, the privacy posture is demonstrable. The rival has been frozen for three consecutive rival-check windows. The strongest remaining artefact is a retrospective that engages the brief's evaluation criteria directly.
+
+**Angle:** The brief's evaluation prompt (verbatim from `BRIEF.md`) is comparative and process-focused: what bets, how decisions evolved, where the team and the rival diverged, how the team handled the regulated-advice line, what the decision trail shows about reasoning under ambiguity. The retrospective should engage all four in turn, briefly and honestly. Suggested structure (Writer may reshape):
+
+1. *The bets.* Single-device-together over multi-device. In-page state only. The arc as the unit, not a single fixed deck. Elicit, never prescribe. One paragraph each, no longer. Quote the lede from the landing once.
+2. *How decisions evolved.* Walk a small number of inflection points from the decision log — not all of them. The four most defensible to single out:
+   - Holding the single-device line *after* seeing Roundtable's two-device handshake (decision-log 2026-05-01 01:40).
+   - Picking the second arc over pacing affordances after the second rival check, then overriding *that* provisional pick toward take-aways once it became clear a content beat at the close was the stronger move (entries 02:40 and 04:00). Be honest about the override.
+   - The reactive small polish after Roundtable shipped print + clipboard — a small "we noticed they stepped onto our turf, so we polished the same axis without expanding scope" beat (entry 04:50).
+   - Calling iteration done at the sixth rival check (entry 06:40), because there was no defensible next slice.
+3. *Where the rival and Common Ground diverged.* Plain-prose comparison — no table, no bullet list. Two products from one brief: theirs is multi-device, simultaneous reveal, server-side ephemeral storage, fixed five-prompt deck. Ours is single-device, side-by-side, in-page state only, two named arcs with a closing reflection and a take-aways beat. Both defensible interpretations of "having a productive conversation about money together"; they emerge from very different theories of what makes the conversation work. State that openly. Do not crow.
+4. *The advice line, in practice.* The disclaimer is on every page. The product never scores, ranks, or sorts by perceived importance. The closing reflection lists tagged items in the original prompt order. The take-aways inputs have no example placeholder text. The arc selector treats both arcs neutrally. None of this needs the disclaimer to be load-bearing — the design choices hold the line regardless. One short paragraph; quote the disclaimer once.
+5. *What the decision trail shows.* This is the meta-beat. We picked simple readings over asking for clarifications (one early decision: when the brief was ambiguous on shape, take the simplest reading). We recorded reversals openly (the override of pacing toward take-aways is the cleanest example). We deferred candidate features explicitly rather than dropping them (the queue of provisional next directions in successive entries). We revised provisional picks when rival data warranted (printed-PDF refinement after Roundtable's print slice) but held the architectural line when it didn't (multi-device pivot rejected three times). We stopped when there was no defensible next slice rather than shipping for its own sake. Half a sentence each is plenty; the point is the *shape* of the trail, not a list of every entry.
+
+**What not to put in the post:**
+- Numbers we'd cherry-pick (test counts, post counts, timestamps, version ids).
+- A claim that we "won". The brief explicitly evaluates not on which product is better.
+- An enumeration of every decision-log entry — readers can read the log; the post is the synthesis.
+- A roadmap of "what we'd do next". Iteration is paused, not deferred to a future sprint.
+- Public commentary on Roundtable's bug post. Their public artefacts are fair to reference (the "deck of five, simultaneous reveal" framing they put in their own MVP post is canonical), but their bug confessions are not material we'd use to make a point.
+
+**Length guide:** ~700–1000 words. Longer than the release notes, shorter than a manifesto. Five short sections matching the five-beat structure above.
+
+**Coordination with the small landing-copy entry (queued just above this one):** The Writer has three reasonable paths — (a) ship both as separate posts, (b) ship the retrospective standalone and mark the small entry as deferred-and-folded-in (mentioning the new lede and privacy line in passing within the retrospective), or (c) ship the small one standalone and the retrospective as a separate post. The Orchestrator's recommendation is (b), but the Writer's call. Whichever path, when both queue entries reach `published` or a documented deferred state, the Orchestrator can declare the run wrapped.
+
+British English. The rival reads this post.
+
+**Status:** published
+**Post path:** apps/blog/src/content/posts/how-the-decisions-went.md
+
+**Writer note:** Took path (b). Five short sections matching the suggested structure (the bets / how the decisions evolved / where the two products diverged / the advice line, in practice / what the trail shows). Body lands at ~1,080 words — a touch over the 1,000 ceiling but within reach of the spirit of the guide; further trimming was costing concreteness in the inflection-point beats. The new landing lede and the new on-landing privacy line are quoted verbatim inside "The bets". The four canonical Roundtable framings used are "multi-device join handshake", "server-side session storage", "fixed deck of five", and "simultaneous reveal" — all from their own published posts. No reference to their P0 bug post. No claim of "we won". No roadmap. No cherry-picked numbers. **Surfaced separately to the Orchestrator on hand-back:** Roundtable's RSS now lists a fifth post, "Two or more, taken at face value: Roundtable now seats 2–4", that was not present at the sixth rival check (06:35) — they have shifted from frozen to shipping a plurality move. This may meet the bar in the 06:40 entry's reversibility note ("if Roundtable ships something that genuinely calls for a response, iteration can resume"). The retrospective itself does not commentate on this slice and remains defensible if the Orchestrator chooses either to wrap or to resume.
