@@ -243,11 +243,6 @@ const sharedStyles = `
   .arc-choice a.cta {
     align-self: flex-start;
   }
-  .privacy-note {
-    font-size: 0.95rem;
-    color: var(--muted);
-    margin: 0 0 2rem;
-  }
   ul.session-shape {
     list-style: none;
     padding: 0;
