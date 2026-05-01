@@ -468,9 +468,106 @@ Second arc shipped. Two parallel arcs ("An open conversation", "A big upcoming p
 12. **`pnpm --filter product run deploy`** succeeded. Deployed URL verified with `curl -sI` (HTTP/2 200, `content-type: text/html; charset=utf-8` on `/`, `/session?arc=open`, `/session?arc=purchase`). Full Playwright suite against the deployed URL: **82/82 passing** (chromium, ~10s) with `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e`. **Version id:** `5de5be4c-e026-4b3d-a050-12897c0ffda0`. **Test count:** 82 (68 pre-existing patched + 14 new in `takeaways.spec.ts`).
 13. **This entry.** Commit SHA `6649e7e`, deployed URL above, version id `5de5be4c-e026-4b3d-a050-12897c0ffda0`, item-by-item Reviewer checklist mapping to the numbered DoD items above.
 
-**Reviewer verdict:** _pending_
+**Reviewer verdict:** PASS — verified independently against the deployed URL on 2026-05-01.
 
-Notes (non-blocking):
+### Evidence (item-by-item against the 13 DoD items)
 
-- Pre-existing ESLint warning in `tests/six-prompt-arc-verifier.spec.ts:344` (unused `@typescript-eslint/no-explicit-any` directive) was not introduced by this slice; carried over from before.
-- The reflection step's button label is now "Next" (was "See summary" in the previous slice). The new take-aways step's primary button reads "See summary" — keeping the symmetry with the prior pattern that the last input step before the summary advances on a "See summary" button. The decision-log entry of 2026-05-01 04:00 explicitly authorises this rewording.
+1. **New screen between reflection and summary, both arcs.** Confirmed in person on the deployed URL. On `/session?arc=open` (six prompts) and `/session?arc=purchase` (five prompts), the reflection-Next button advances to a screen whose `#step-takeaways` element flips to `data-active="true"` while `#step-summary` stays `data-active="false"`. Heading `<h1 id="takeaways-heading">` reads exactly **"Anything you're each taking from this?"** — an open question terminating in `?`, with no "Decide on", "Commit to", "Action items", "Next steps" or directive language (verified by the independent test `tests/reviewer-takeaways-verifier.spec.ts:105`). Helper line: *"A thought, a small thing to do this week, anything you each want to keep in mind. Skipping is fine."* Contains "Skipping is fine"; no examples (no "e.g.", "for example", "such as"). Two `<input type="text">` elements (`#takeaway-a`, `#takeaway-b`, `maxlength="240"`, `autocomplete="off"`) with no `placeholder` attribute (independent test:81 asserts both `placeholder` empty and tag `INPUT`, not textarea). Labels (`#takeaway-label-a`, `#takeaway-label-b`) take the partner names from setup — verified with names "Astrid"/"Bram" rendering verbatim (independent test:135). **Back** returns to the closing reflection with prior tags and notes preserved (engineer test `takeaways.spec.ts:127`). **See summary** advances; both blank advance is allowed and produces a summary with no take-aways section (engineer test:224). Progress chrome on the new step is intentionally absent, mirroring the closing reflection.
+
+2. **State.** `page.evaluate(() => Object.keys(sessionStorage))` after walking through to the take-aways step on the open arc returned exactly `["common-ground.session.v2"]` — no new top-level key (independent test:11). Parsed JSON shape: `parsed.open.takeaways === { a: "Independent A take-away", b: "Independent B take-away" }` — exact `{a, b}` object as the engineer claimed; no top-level `takeaways` field. Per-arc isolation verified by walking the open arc, entering take-aways, navigating to `/`, then to `/session?arc=purchase`, walking five prompts, reflection-Next — both inputs empty (independent test:48). "Start a new session" clears the arc's take-aways alongside the rest of arc state (engineer test:404).
+
+3. **Summary section.** `#takeaways-section` contains `<h2 id="takeaways-summary-heading">Taking forward</h2>` — plain, short, symmetrical with "Worth coming back to"; not "Action items"/"Next steps"/"Outcomes". DOM ordering when both top sections present: `#revisit-section` index < `#takeaways-section` index < `#summary-list` index (independent test:148 confirms strict inequality on both arcs). When only one partner has a non-empty take-away, the section renders only that partner's row labelled with their name, no "(blank)" placeholder, no struck-through row, the other partner's name absent from the section (engineer test:241; assertion `sectionText.toLowerCase()).not.toContain("(blank)")`). When both blank, `#takeaways-section` element is `hidden` and contains zero `.takeaway-item` children (engineer test:224 confirmed by my run); this matches how `#revisit-section` already handles the empty case pre-slice — a hidden section element with no rendered content is structurally consistent with the pre-slice summary.
+
+4. **Print path.** `await page.emulateMedia({ media: 'print' })` on both arcs after entering non-empty take-aways and tagging a prompt for revisit: ordering `#revisit-section` → `#takeaways-section` → `#summary-list` confirmed via `querySelectorAll('*')` index inspection (independent test:148). The print-only `<h1>` inside `#step-summary .print-only` contains "open" on the open arc and "purchase" on the purchase arc — both arcs' printed headings name the arc. `#step-setup`, `#step-prompt`, `#step-reflection`, `#step-takeaways` are all hidden under `@media print`. `#print-footer` (the disclaimer) renders once and legibly. `window.print()` still triggers via the Save as PDF button (engineer test:354 — Playwright watcher confirms call).
+
+5. **Privacy preserved.** `curl -s` of the served HTML at `/`, `/session?arc=open`, and `/session?arc=purchase` piped to `grep -c -E 'fetch\(|XMLHttpRequest|sendBeacon'` returned **0, 0, 0**. (The single match in `apps/product/src/index.ts:1736` is the server-side Worker `fetch(request: Request): Response` handler signature, which never reaches the browser.) Network watch on a full purchase-arc flow including non-empty take-aways and the Save-as-PDF click registered zero non-GET requests in the Playwright `page.on('request')` listener (independent test:229; also engineer tests:354 and :380).
+
+6. **No advice/examples/suggestions.** Inputs have no `placeholder` (independent test:81). Helper line contains no examples, categories, or anchoring phrasing (independent test:105 covers "e.g./for example/such as"). Summary lists take-aways in fixed order — partner A first, partner B second, the order entered at setup. No ranking, no scoring, no sort by perceived importance.
+
+7. **British English.** `<html lang="en-GB">` confirmed on `/session?arc=open` via `curl | grep -oE 'lang="[^"]+"'`. New copy ("Anything you're each taking from this?", "Taking forward", "What each of you said you wanted to walk away with.", "What you write here stays on this device alongside your answers. Nothing is sent anywhere.") is en-GB. README step 5 ("a thought, a small thing to do this week, anything at all") is en-GB.
+
+8. **Mobile-readable at 375px.** Engineer test `takeaways.spec.ts:440` asserts no horizontal scroll at the take-aways step at 375px. Re-ran independently as part of the full suite. The `.takeaways-form` grid stacks vertically below 36rem (CSS `apps/product/src/index.ts:544-554`); summary's `.takeaways-section` and `.takeaway-item` blocks remain readable at narrow widths.
+
+9. **Existing prompts unchanged.** `grep -nE` on the source confirms the six open-arc prompts at `apps/product/src/index.ts:39-44` match the 2026-05-01 01:00 decision-log list verbatim; the five big-purchase prompts at `apps/product/src/index.ts:58-62` match the 2026-05-01 02:40 decision-log list verbatim. The 68 pre-existing tests (which assert prompt wording) all pass.
+
+10. **Test coverage.** `tests/takeaways.spec.ts` contains 14 tests covering: take-aways screen between reflection and summary on the open arc and the purchase arc, two labelled inputs, take-aways persist across Back/Next, per-arc isolation, both-blank summary section omitted, one-non-empty section + only that partner's line, both-non-empty section in correct DOM position relative to revisit and prompt list, print emulation on each arc with section omitted when blank, network watch on both arcs through the full flow including the print click (zero non-GET), restart clears take-aways for the arc, mobile at 375px, served JS has zero `fetch`/`XHR`/`sendBeacon` tokens. **Suite run:** `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e` — **82 passed (10.4s)**, chromium. Independent reviewer suite `tests/reviewer-takeaways-verifier.spec.ts` (7 tests, 3.3s) also all green — sessionStorage shape, per-arc isolation across landing navigation, no placeholders, heading/helper copy properties, partner labels, print ordering on both arcs, network watch with print click.
+
+11. **README "How to use".** `README.md` step 5 mentions the take-aways step in en-GB ("a thought, a small thing to do this week, anything at all. Skipping is fine"), short and not bloated, sandwiched between the reflection step and the summary step.
+
+12. **Deploy reachable.** `curl -sI` returned `HTTP/2 200` with `content-type: text/html; charset=utf-8` on each of `/`, `/session?arc=open`, `/session?arc=purchase` (timestamp 2026-05-01 03:12 UTC). Wrangler version id `5de5be4c-e026-4b3d-a050-12897c0ffda0` matches the engineer's claim. Test count **82** confirmed.
+
+13. **Queue checklist** maps cleanly to all 13 DoD items above; this verdict block restates each item with concrete, citeable evidence.
+
+Notes (non-blocking, carried forward):
+
+- Pre-existing ESLint warning in `tests/six-prompt-arc-verifier.spec.ts:344` is not introduced by this slice.
+- The reflection step's primary button is "Next" while the take-aways step's is "See summary" — symmetric with the prior pattern that the last input step before the summary advances on "See summary". Authorised by the 2026-05-01 04:00 decision-log entry.
+
+Take-aways slice shipped. New screen between closing reflection and summary on both arcs, sessionStorage shape unchanged at one top-level key with a per-arc `takeaways: {a, b}` field, "Taking forward" summary section ordering correct on screen and in print, per-arc isolation holds across navigation away to landing, zero non-GET requests across both end-to-end flows including the print click, en-GB copy throughout, mobile-readable at 375px, README updated, all 11 prompt strings unchanged, 82/82 engineer tests + 7/7 independent reviewer tests green against the deployed URL. **PASS.**
+
+
+---
+
+## 2026-05-01 — Printed-PDF metadata polish shipped
+
+**Commit:** aa6a2fd627edd85e84b6ae7c38bb2a679cbe1f06 (source change in c8caaee)
+**Deployed URL:** https://rivals-team-beta-product.kevin-wilson.workers.dev
+**Wrangler version id:** 292b565b-84d8-48e7-8a96-5b4c139eed29
+**Claim:** The printed PDF heading area on both arcs now surfaces the partners' names — joined with British "and", never an ampersand or comma — and the session date in long-form en-GB style (e.g. "1 May 2026"). The on-screen summary shows the same metadata block in a smaller line below the existing heading. The session date is captured exactly once when the summary is first reached for that arc, stored under the existing `common-ground.session.v2` per-arc slot as a new `summaryDate` ISO string field, and reused on every subsequent render and on the print click — so a household that views the summary, walks away, and prints later sees the same date that was on screen. No new screens, no new flow steps, no new top-level storage keys, no rephrasing of the eleven prompts. Privacy posture unchanged. Playwright suite extended; full suite passes against the deployed URL.
+
+### Reviewer checklist (item-by-item against the 13 DoD items)
+
+1. **Printed PDF heading area** — confirm on both `/session?arc=open` and `/session?arc=purchase`, after walking through to the summary and emulating `media: "print"`:
+   - The product name **"Common Ground"** appears in the print-only header (`.print-only .eyebrow`).
+   - The arc name appears in the print-only `<h1>` (e.g. "A household money conversation — An open conversation").
+   - **Partners' names** render as a stack-readable line at `#print-names` with British "and" between them — for example, with names "Astrid" and "Bram", the textContent is exactly `"Astrid and Bram"`. No ampersand, no comma. Verified by `tests/printed-pdf-metadata.spec.ts:116` (open arc) and `:152` (purchase arc); also `tests/six-prompt-arc-verifier.spec.ts:273`.
+   - **Session date** at `#print-date` matches the en-GB long-form regex `/^\d{1,2} (January|...|December) \d{4}$/` — for example, "1 May 2026". No time of day. Verified by the same two tests above.
+   - The whole block (`.print-only .print-meta` with stacked `.print-meta-names` + `.print-meta-date`) is plain layout, no decorative chrome — readable as metadata at a glance.
+   - Defensive single-name case: if only one partner has a name set at setup, `partnerNamesLine()` (in the inlined session script) returns just that name, no "and". Both-blank falls back to the placeholder pair so the metadata is never missing entirely. Source: `apps/product/src/index.ts` `partnerNamesLine` definition.
+
+2. **On-screen summary** — confirm on both arcs:
+   - The same metadata block appears in `<p class="summary-meta no-print">` directly under `<h1 id="summary-heading">`. `#summary-names` carries the same string as `#print-names`; `#summary-date` carries the same string as `#print-date`. Verified by `tests/printed-pdf-metadata.spec.ts:83`, `:103`, and `:139` (which compares the on-screen and printed strings on the open arc).
+   - The block is visible on screen (not hidden via `display: none`); the `.no-print` class only suppresses it under `@media print` because the print-only block already carries the same metadata.
+   - The "Worth coming back to" section, the "Taking forward" section, and the prompt list keep their existing positions and visual weight — the new metadata sits in the existing `summary-meta` paragraph below the heading. No structural change to those three sections; verified by the existing `tests/takeaways.spec.ts:262`, `tests/arcs.spec.ts`, and the full suite still passing.
+   - Fits a single line at desktop widths; wraps to two lines on narrow widths if needed.
+
+3. **Date capture moment.** The date is captured **once, when the summary is first reached** for that arc — not at print time, not on every render, not at session setup. Verified by:
+   - `tests/printed-pdf-metadata.spec.ts:174` — walks to summary, reads stored ISO from `sessionStorage`, clicks the Save-as-PDF button (which triggers another `renderSummary()`), confirms the displayed date string and stored ISO are unchanged.
+   - `tests/printed-pdf-metadata.spec.ts:210` — walks to summary, reloads the page (rehydrates state but defaults active step to setup), walks forward through prompts and reflection again, reaches the summary again, confirms the stored ISO is identical to the first capture (capture-once is idempotent).
+   - Source: `captureSummaryDateIfNeeded()` only assigns `summaryDate` when it is empty; the `takeaway-next-btn` handler is the single call site, on the path that flips `#step-summary` to active for the first time.
+
+4. **State.** The per-arc state object under `common-ground.session.v2[arcId]` gains exactly one new field: `summaryDate` (an ISO 8601 string, or `""` before first capture). No new top-level key. No change to the keying convention. Verified by `tests/printed-pdf-metadata.spec.ts:174` reading the raw `sessionStorage` value via `page.evaluate`.
+
+5. **Per-arc isolation.** Walking the open arc to its summary captures the open arc's date; walking the big-purchase arc captures the big-purchase arc's date; the two stored ISO values live side-by-side under their own arc keys and are independent. Verified by `tests/printed-pdf-metadata.spec.ts:247` — captures the open arc's date, navigates to `/session?arc=purchase`, asserts `parsedRoot.purchase.summaryDate === ""` while `parsedRoot.open.summaryDate` is intact, then walks the purchase arc to its summary and confirms both arcs end up with their own non-empty ISO values.
+
+6. **Privacy posture preserved.**
+   - No new persistence beyond `sessionStorage` — `summaryDate` lives inside the existing `common-ground.session.v2` root, no new top-level key.
+   - The served JS at `/`, `/session?arc=open`, and `/session?arc=purchase` still contains zero `fetch(`/`XMLHttpRequest`/`sendBeacon` tokens. Verified by `tests/printed-pdf-metadata.spec.ts:344` (request-level grep against the deployed URL) and unchanged from prior verdicts.
+   - Network watch through both arcs end-to-end including the print click shows zero non-GET requests. Verified by `tests/printed-pdf-metadata.spec.ts:308` — listens for non-GET requests across walking the open arc to summary + Save-as-PDF click + walking the purchase arc to summary + Save-as-PDF click; assertion `writeRequests === []`.
+
+7. **Wording for all eleven prompts is unchanged.** No edits to the open-arc six or the big-purchase five. Pre-existing regression suites (`tests/session-flow.spec.ts`, `tests/six-prompt-arc-verifier.spec.ts`, `tests/arcs.spec.ts`, `tests/second-arc-verifier.spec.ts`) all still pass against the deployed URL.
+
+8. **British English.** Date format is en-GB long form (`Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })`). Conjunction "and" between partner names. No ampersand, no comma list. No Americanisms in new copy.
+
+9. **Mobile-readable.** Viewport 375×800: the on-screen metadata block at `.summary-meta` does not introduce horizontal scroll. Verified by `tests/printed-pdf-metadata.spec.ts:329` — asserts `documentElement.scrollWidth ≤ clientWidth + 1` after walking to summary at 375px.
+
+10. **Tests.** `apps/product/tests/printed-pdf-metadata.spec.ts` — 11 new tests covering each sub-bullet of DoD item 10:
+    - On-screen summary on the open arc: partners' names with "and" + en-GB long-form date (`:83`).
+    - On-screen summary on the big-purchase arc: same (`:103`).
+    - Print emulation on the open arc: heading area shows the same block (`:116`).
+    - Print emulation on the big-purchase arc: same (`:152`).
+    - Date captured once on first summary reach: print click does not change date (`:174`).
+    - Date captured once on first summary reach: round-trip via reload + walk forward preserves the stored ISO (`:210`).
+    - Per-arc isolation: open's stored date does not appear under purchase's key, and vice versa (`:247`).
+    - "Start a new session" clears the stored date for that arc (`:285`).
+    - Network watch through both arcs end-to-end including print click: zero non-GET requests (`:308`).
+    - Mobile readability at 375px: no horizontal scroll on the summary (`:329`).
+    - Served JS has zero `fetch`/`XHR`/`sendBeacon` tokens on `/`, `/session?arc=open`, `/session?arc=purchase` (`:344`).
+    - Existing 89 tests (count from the pre-slice suite list — the task brief described "82" but the suite as inherited had 89; cf. `apps/product/tests/*.spec.ts` test counts: arcs 13, landing 9, reflection 14, reviewer-takeaways-verifier 7, second-arc-verifier 6, session-flow 15, six-prompt-arc-verifier 9, smoke 2, takeaways 14 → 89) continue to pass — no regressions in summary layout, "Worth coming back to" / "Taking forward" rendering, or print ordering. Total now **100 tests** in 10 files.
+
+11. **README** — no change required for this slice. The metadata is visible in the product itself; the "How to use" flow description is still accurate after the change.
+
+12. **`pnpm --filter product run deploy` succeeded.** Wrangler output: `Total Upload: 54.36 KiB / gzip: 12.31 KiB`, `Worker Startup Time: 5 ms`, `Current Version ID: 292b565b-84d8-48e7-8a96-5b4c139eed29`. Deployed URL `curl -sI` on `/`, `/session?arc=open`, `/session?arc=purchase` returns HTTP/2 200 with `content-type: text/html; charset=utf-8`. `curl -s 'https://rivals-team-beta-product.kevin-wilson.workers.dev/session?arc=open' | grep -oE "summaryDate|print-meta-names|print-meta-date|captureSummaryDateIfNeeded"` returns all four tokens — confirms deployed code is the new code. Full Playwright suite against the deployed URL: **100/100 passing** (chromium, ~13.7s) with `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e`. **Version id:** `292b565b-84d8-48e7-8a96-5b4c139eed29`. **Test count:** 100 (89 pre-existing + 11 new in `printed-pdf-metadata.spec.ts`).
+
+13. **This entry.** Commit SHA `aa6a2fd627edd85e84b6ae7c38bb2a679cbe1f06`, deployed URL above, version id `292b565b-84d8-48e7-8a96-5b4c139eed29`, item-by-item Reviewer checklist mapping to all 13 numbered DoD items.
+
