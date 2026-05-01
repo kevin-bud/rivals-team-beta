@@ -5,7 +5,7 @@ Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 
 **Task:** Tighten the landing-page copy. The landing has not been revisited since the MVP — three product beats since (closing reflection, second arc, take-aways) plus the printed-PDF metadata polish are unannounced on the landing surface. Editorial work only. No new flow, no new screens.
 **Assigned:** 2026-05-01 06:00
-**Status:** assigned
+**Status:** awaiting review
 **Notes:**
 
 ## Context

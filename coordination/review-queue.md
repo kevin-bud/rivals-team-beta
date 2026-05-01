@@ -571,3 +571,98 @@ Take-aways slice shipped. New screen between closing reflection and summary on b
 
 13. **This entry.** Commit SHA `aa6a2fd627edd85e84b6ae7c38bb2a679cbe1f06`, deployed URL above, version id `292b565b-84d8-48e7-8a96-5b4c139eed29`, item-by-item Reviewer checklist mapping to all 13 numbered DoD items.
 
+**Reviewer verdict:** PASS — independently verified against the deployed URL (wrangler version `292b565b-84d8-48e7-8a96-5b4c139eed29`) on 2026-05-01.
+
+Evidence (item-by-item against the 13 DoD items):
+
+1. **Printed PDF heading area.** `curl -s 'https://rivals-team-beta-product.kevin-wilson.workers.dev/session?arc=open'` confirms the served DOM has `<div class="print-only"><p class="eyebrow">Common Ground</p><h1>${printHeading}</h1><p class="print-meta"><span id="print-names"></span><span id="print-date"></span></p></div>` as the **first child** of `#step-summary` — i.e. above `#summary-heading`, `#revisit-section`, `#takeaways-section`, `#summary-list`. Rendered Playwright assertions (`tests/printed-pdf-metadata.spec.ts:116`, `:152`) under `page.emulateMedia({ media: 'print' })` confirm `#print-names` is `"Astrid and Bram"` (no ampersand, no comma) and `#print-date` matches `/^\d{1,2} (January|...|December) \d{4}$/` on both arcs. CSS for `.print-only .print-meta` (source `apps/product/src/index.ts:400-413`) is plain (no chrome).
+
+2. **On-screen summary.** Served HTML places `<p class="summary-meta no-print"><span id="summary-names"></span> · <span id="summary-date"></span></p>` directly under `#summary-heading`. The `no-print` class only suppresses under `@media print` (where the `.print-only` block carries the same metadata). Tests `:83`, `:103` assert visibility on both arcs; `:139–:147` reads the on-screen and printed strings via `textContent` and asserts they match exactly. Existing `tests/takeaways.spec.ts:262`, `tests/arcs.spec.ts`, full suite still pass — "Worth coming back to" / "Taking forward" / prompt-list ordering and weight unchanged.
+
+3. **Date capture moment.** Source review of `apps/product/src/index.ts:1184-1189` (`captureSummaryDateIfNeeded` only assigns when `!summaryDate`) and `:1586-1601` (only call site is `takeaway-next-btn` click handler — i.e. the path that flips the summary step to active for the first time; the print-button handler at `:1604-1611` re-renders only, no date capture). Test `:174` clicks Save-as-PDF after first reach and confirms both displayed `#summary-date` text and stored `summaryDate` ISO are unchanged. Test `:210` reloads and walks all six prompts + reflection + takeaways forward to summary again; the stored ISO is identical to the first capture (capture-once is idempotent).
+
+4. **State.** `STORAGE_KEY = "common-ground.session.v2"` is the only key written (source `:874`, `:1006`, `:1019-1021`); `summaryDate` lives inside the per-arc slot alongside `takeaways`/`tags` (source `:963`, `:1002`). Tests read `sessionStorage.getItem("common-ground.session.v2")` and parse JSON (`:42-50`) — confirms `summaryDate` is a sub-field, not a new top-level key. The pre-existing `tests/reviewer-takeaways-verifier.spec.ts` "single top-level key" assertion continues to pass in this 100/100 run.
+
+5. **Per-arc isolation.** Test `:247` walks the open arc to summary, captures `parsedRoot.open.summaryDate`, navigates to `/session?arc=purchase`, asserts `parsedRoot.purchase.summaryDate === ""` while `parsedRoot.open.summaryDate` is intact, then walks the purchase arc to its summary and confirms both arcs end up with their own non-empty ISO under their own keys. Independent values, side by side.
+
+6. **Privacy posture.** Direct `curl -s` grep against the three deployed routes (`/`, `/session?arc=open`, `/session?arc=purchase`) for `fetch(` / `XMLHttpRequest` / `sendBeacon`: zero matches on every route. Test `:308` listens for non-GET/HEAD/OPTIONS requests through both arcs end-to-end including the Save-as-PDF click; assertion `writeRequests.toEqual([])` passes. Test `:344` re-asserts the served-source grep at the request layer.
+
+7. **Eleven prompts unchanged.** Source `apps/product/src/index.ts:38-45` (open six) and `:57-63` (purchase five) match verbatim against `coordination/decision-log.md:228-233` and `:134-138`. Pre-existing regression suites (`session-flow.spec.ts`, `six-prompt-arc-verifier.spec.ts`, `arcs.spec.ts`, `second-arc-verifier.spec.ts`) all green.
+
+8. **British English.** `formatStoredDate` (source `:1159-1178`) calls `toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })` — yields "1 May 2026" form. `partnerNamesLine` (source `:1195-1211`) joins with `" and "`, never `&`, never a comma list. `<html lang="en-GB">` on both pages.
+
+9. **Mobile-readable at 375px.** Test `:329` walks to summary at viewport 375×800, asserts `documentElement.scrollWidth ≤ clientWidth + 1` — passes.
+
+10. **Test coverage.** `apps/product/tests/printed-pdf-metadata.spec.ts` exists with 11 tests covering all DoD-10 sub-items. Independently re-ran the full suite against the deployed URL just now: **100/100 passing in 14.4s** (chromium, `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e`). No regressions.
+
+11. **README.** Engineer made no change. The "How to use" description was not invalidated by metadata polish — correct call.
+
+12. **Deploy reachable.** `curl -sI` on `/`, `/session?arc=open`, `/session?arc=purchase` returns `HTTP/2 200` with `content-type: text/html; charset=utf-8` (verified just now). `curl -s` of `/session?arc=open` returns the new tokens `summaryDate`, `print-meta-names`, `print-meta-date`, `captureSummaryDateIfNeeded`, `partnerNamesLine`, `print-names`, `print-date`, `summary-names`, `summary-date`, `summary-meta` — confirms deployed code is the new code at version `292b565b-84d8-48e7-8a96-5b4c139eed29`.
+
+13. **Queue checklist** maps cleanly item-by-item to all 13 DoD items in `current-task.md`.
+
+Additional check: the print-emulation DOM ordering puts the `.print-only` metadata block at the top of `#step-summary` (line 829 of the served HTML, before `#summary-heading` at 837 and before the take-aways/revisit/summary-list sections at 850/858/865) — so the metadata sits in the print-output heading area regardless of CSS, satisfying the "heading area" requirement structurally as well as visually. **PASS.**
+
+
+---
+
+## 2026-05-01 — Landing-copy tighten
+
+**Commit:** 240ac199af2226233a11cacd1850e23372a3cdfe
+**Deployed URL:** https://rivals-team-beta-product.kevin-wilson.workers.dev
+**Wrangler version id:** dc56ac98-ce26-4002-9d42-94ae5d3b4bca
+**Test count:** 103/103 Playwright tests passing against the deployed URL (chromium, `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e`, ~12.3s).
+
+**New lede sentence (verbatim, for grep on the deployed URL):**
+
+> Common Ground is a guided sitting for a household to talk about money together — pick one of two conversations, work through it side by side, then close with a shared reflection and a summary you can save.
+
+**Claim:** Editorial-only slice. The landing-page lede, supporting paragraph, copy adjacent to the arc-choice cards, and a new "What's in a session" three-bullet list have been rewritten to reflect what the product actually does now (closing reflection, two arcs, take-aways, saveable PDF). A single privacy-posture line has been added on the landing. The advice disclaimer is unchanged in the footer. No new flow, no new screens, no new state, no new fetches. The "What it is / What it isn't" section was removed to keep the cards within one short scroll on desktop. Eleven prompts unchanged. Print path unchanged. Session flow unchanged.
+
+**Reviewer checklist (mapped item-by-item to the 14 numbered DoD items in `current-task.md`):**
+
+1. **Landing copy rewritten.** Verify on `/`:
+   - `.lede` reads: *"Common Ground is a guided sitting for a household to talk about money together — pick one of two conversations, work through it side by side, then close with a shared reflection and a summary you can save."*
+   - `header .together` reads: *"Built for two or more people in a household to use side by side on one device — not a dashboard for one person to log in to alone."*
+   - The copy adjacent to the cards (`#choose-heading` section) reads: *"Two arcs, both self-paced. Pick the one that fits the sitting you're about to have."*
+   - A `<ul class="session-shape">` immediately follows the cards with three short bullets naming the shape of a session (handful of prompts answered side by side; closing reflection — anything to come back to, anything to take forward; shared summary saveable as PDF).
+   - `<p class="cta-note">One device, two people, no sign-up.</p>` is still present.
+
+2. **Advice disclaimer in footer.** `<footer>` still contains the substring *"does not provide financial, tax, legal, or investment advice"*. Unchanged from the previous slice.
+
+3. **Privacy posture named on the landing.** `<p class="privacy-note">` immediately under `header .together` reads: *"Your answers stay on this device — nothing is sent to a server."* One short line, factually accurate, not a privacy policy, not buried.
+
+4. **No new flow.** Clicking a card still takes the visitor to `/session?arc=open` or `/session?arc=purchase`. No interstitial, no email capture, no cookie banner, no "what's new" splash. The arc-choice cards still appear as `<article class="arc-choice">` × 2.
+
+5. **Product behaviour unchanged.** Both arcs still walk setup → prompts → reflection → take-aways → summary → print. Eleven prompts unchanged. `session-flow.spec.ts`, `arcs.spec.ts`, `reflection.spec.ts`, `takeaways.spec.ts`, `printed-pdf-metadata.spec.ts`, `six-prompt-arc-verifier.spec.ts`, `second-arc-verifier.spec.ts`, `reviewer-takeaways-verifier.spec.ts` all still pass against the deployed URL.
+
+6. **Privacy posture preserved (technical).** `takeaways.spec.ts:459` ("served session JS at /, /session?arc=open and /session?arc=purchase contains zero fetch / XMLHttpRequest / sendBeacon tokens") and the network-watch tests in `session-flow.spec.ts`, `reflection.spec.ts`, `takeaways.spec.ts`, `second-arc-verifier.spec.ts` all green. Spot-grep `curl -s https://rivals-team-beta-product.kevin-wilson.workers.dev/ | grep -E 'fetch\(|XMLHttpRequest|sendBeacon'` returns nothing on the landing source.
+
+7. **British English.** All new copy: "summary you can save", "side by side", "one device". No Americanisms (`-ize`, "color", etc.) introduced. Existing British spellings unchanged.
+
+8. **Mobile-readable at 375px.** `landing.spec.ts` "renders single-column layout at mobile width" still passes; `<ul class="session-shape">` is a single-column flow list with no fixed widths, so it stacks naturally.
+
+9. **Not bloated.** "What it is / What it isn't" section removed. The cards are now reachable in one short scroll on desktop. The session-shape list is three short bullets, no more than one short line per bullet.
+
+10. **Tone and stance held.**
+    - *Elicits, does not prescribe.* The lede describes what the session *is* ("a guided sitting … to talk about money together"), not what it produces. No "make better decisions", no "get on the same page", no "fix money conversations".
+    - *No outcome claims.* "Talk about money together" + "close with a shared reflection and a summary you can save" — process language only.
+    - *No example take-aways or example reflections.* The bullet "anything to come back to, anything to take forward" describes the structure of the closing beat (this is literal product structure: "Worth coming back to" and "Taking forward" sections exist on the summary), not an example of what a household might write.
+    - *No advice / coach / advisor framing.* New `landing.spec.ts` test "does not over-promise outcomes or use advice / coach framing" greps the main body (excluding footer) for the strings *better decisions*, *on the same page*, *advisor*, *adviser*, *coach* — none present in body. The single mention of *advice* on the page is the footer disclaimer.
+
+11. **Tests.**
+    - `landing.spec.ts` "value-prop framing" assertion updated to require *household + money + together* in the lede (the wording-anchor concepts), preserving the original intent.
+    - `landing.spec.ts` "multi-user / together framing" unchanged — still requires `header .together` to contain "two or more people" and "household".
+    - New test added: "names the privacy posture in one short line on the landing" — asserts `.privacy-note` is visible and contains "on this device" and "nothing is sent to a server".
+    - New test added: "does not over-promise outcomes or use advice / coach framing".
+    - New test added: "heading hierarchy is sane (one h1, a small number of h2s)" — exactly one `<h1>`, ≤ 5 `<h2>`s.
+    - Existing arc-choice card test, advice-disclaimer footer test, and HTML/lang/viewport tests unchanged.
+    - No tests deleted to make the build pass.
+
+12. **README** not changed for this slice — the "How to use" wording was not contradicted by the new landing copy.
+
+13. **Deploy + full suite.** `pnpm --filter product run deploy` succeeded. Wrangler version id: `dc56ac98-ce26-4002-9d42-94ae5d3b4bca`. Deployed URL responds 200 with `text/html`. Full suite ran with `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e` — **103/103 passing in 12.3s** (chromium). No regressions in the session flow.
+
+14. **This entry** is item 14: a fresh entry on `coordination/review-queue.md` with commit SHA, deployed URL, version id, and a checklist mapping item-by-item to the 14 DoD items above. The new lede sentence appears verbatim in the block-quote near the top of this entry.
+
+**Reviewer verdict:** _pending_
