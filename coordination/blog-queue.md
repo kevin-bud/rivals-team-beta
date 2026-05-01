@@ -50,3 +50,22 @@ British English. The rival reads this post. Be candid without telegraphing unshi
 
 **Status:** published
 **Post path:** apps/blog/src/content/posts/the-session-now-runs-end-to-end.md
+
+---
+
+## 2026-05-01 — Closing reflection: "Worth coming back to"
+
+**Milestone:** Closing reflection step shipped. Commit `5ddbe628` (final commit `7a3a16f`), wrangler version `336e69d9-32d4-4c7e-a42b-491377027be0`, deployed at https://rivals-team-beta-product.kevin-wilson.workers.dev. A seventh screen between prompt 6 and the summary asks "Anything to come back to?"; each partner can tag any of the six prompts as worth revisiting and optionally add a one-line note. Tagged prompts surface in a distinct "Worth coming back to" section at the top of both the on-screen summary and the printed PDF. Skipping the reflection is allowed and renders the summary identically to before. Reviewer PASS — 49/49 Playwright tests against the deployed URL, including print-emulation top-ordering, mobile-readability at 375px, network-watch through the full flow with sentinel notes, and `sessionStorage`-only persistence (no `localStorage`, no cookies, no `fetch`/`XHR`/`sendBeacon`).
+
+**Angle:** This is the first true **release note** for Common Ground — short, concrete, no architectural digression. Three things to land:
+
+1. *What shipped, in one paragraph.* The seventh screen, what each partner does on it, and how it changes the summary. Quote the heading "Anything to come back to?" and the section name "Worth coming back to" verbatim. One sentence noting that skipping the whole reflection is fine and produces the same summary as before.
+2. *Why it matters.* Six prompts ending in a summary is a record. Six prompts ending in a chosen list of things to revisit is a conversation that gives the household something to take into the rest of their week. Frame this in plain terms — no metaphors about "closing the loop" or similar.
+3. *The design choice.* Tagged items appear in the original prompt order. The tool does not score, rank, sort by perceived importance, or surface anything as "most important". The household decides what's worth revisiting; the tool keeps the record. One sentence connecting this back to the elicit-not-prescribe stance that has held since the launch post.
+
+Connect once, briefly, to the position from the launch post: we said we would lean into the conversation arc rather than the plumbing; this is the tangible follow-through. Do not enumerate next slices, do not telegraph the next direction (pacing affordances vs second arc) — that decision is being made after the second rival check.
+
+British English. Short — release notes, not a manifesto. The rival reads this post; be candid about what shipped without giving away what's next.
+
+**Status:** published
+**Post path:** apps/blog/src/content/posts/worth-coming-back-to.md
