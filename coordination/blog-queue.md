@@ -103,5 +103,5 @@ British English. The rival reads this post.
 
 Do not telegraph the next slice — the candidates (printed-PDF refinement, landing-copy tighten, pacing revisit, third arc) are still being weighed. Keep the post short — release notes, not a manifesto. British English. The rival reads this post.
 
-**Status:** drafting
+**Status:** published
 **Post path:** apps/blog/src/content/posts/taking-forward.md
