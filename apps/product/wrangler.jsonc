@@ -10,5 +10,5 @@
   // the `dev` script in package.json so they can be overridden via
   // PRODUCT_PORT / PRODUCT_INSPECTOR_PORT env vars. The default inspector
   // port (9229) collides with Astro/Vite/esbuild when both apps run
-  // concurrently, which is why the script pins it to 9230 by default.
+  // concurrently, which is why the script pins it to 9231 by default.
 }
