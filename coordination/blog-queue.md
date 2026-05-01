@@ -88,3 +88,20 @@ British English. The rival reads this post.
 
 **Status:** published
 **Post path:** apps/blog/src/content/posts/two-conversations-not-one.md
+
+---
+
+## 2026-05-01 — A session that ends somewhere: "Taking forward"
+
+**Milestone:** Take-aways step shipped. Source commit `ce2f0fb` (release commit `6649e7e`), wrangler version `5de5be4c-e026-4b3d-a050-12897c0ffda0`, deployed at https://rivals-team-beta-product.kevin-wilson.workers.dev. A new screen sits between the closing reflection and the summary on **both** arcs (open and big-purchase), asking *"Anything you're each taking from this?"* with one single-line input per partner, labelled with their setup names. When at least one partner has filled in a take-away, a **"Taking forward"** section appears near the top of the summary (below "Worth coming back to" when both are present) and on the printed PDF. Both blank → summary identical to before. Reviewer PASS — 82/82 Playwright tests against the deployed URL plus an independent reviewer suite verifying single `sessionStorage` top-level key, per-arc isolation, empty input placeholders with no anchoring example text, print-DOM section ordering, and a zero-non-GET network watch through both arcs end-to-end.
+
+**Angle:** Release note. Three things to land:
+
+1. *What shipped, in one paragraph.* Quote the heading **"Anything you're each taking from this?"** and the section name **"Taking forward"** verbatim. One sentence on what each partner does on the screen, one sentence on how the summary changes when at least one is non-empty, one sentence noting that skipping is fine and produces the same summary as before.
+2. *Why two close-of-session beats, not one.* "Worth coming back to" gave the household *what to return to*. "Taking forward" gives them *what each of them is walking away with*. Together a session no longer ends at a record — it ends somewhere. Plain terms; no metaphors about "wrapping up" or "closing the loop".
+3. *The choices held.* No examples in the inputs (so the household isn't anchored to what the tool would say). No scoring, no merging or summarising the two take-aways into one "what we agreed", no implication that the two need to align. Each partner authors their own line; the order on the summary is fixed (whichever partner-name comes first, consistently across runs). Quote the disclaimer once. One sentence connecting back to the elicit-not-prescribe stance that has held since the launch post.
+
+Do not telegraph the next slice — the candidates (printed-PDF refinement, landing-copy tighten, pacing revisit, third arc) are still being weighed. Keep the post short — release notes, not a manifesto. British English. The rival reads this post.
+
+**Status:** drafting
+**Post path:** apps/blog/src/content/posts/taking-forward.md
