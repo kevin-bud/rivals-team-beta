@@ -1,22 +1,77 @@
-// Common Ground — single-Worker product. Two routes only:
-//   GET /          → landing page
-//   GET /session   → four-screen, single-device session flow
-//                    (setup → six prompts with progress + back/next →
-//                     reflection → summary)
-// State lives entirely in the browser (sessionStorage). No fetches carry
-// answer text. There is no other server-side route.
+// Common Ground — single-Worker product. Routes:
+//   GET /                       → landing page (two arcs surfaced)
+//   GET /session?arc=open       → six-prompt arc ("An open conversation")
+//   GET /session?arc=purchase   → five-prompt arc ("A big upcoming purchase")
+//   GET /session                → defaults to the open arc
+// State lives entirely in the browser (sessionStorage) under the key
+// `common-ground.session.v2`, an object keyed by arc id so each arc has its
+// own answers/tags/notes — no leakage between arcs. There is no other
+// server-side route. No fetches carry answer text.
 
-// The six curated prompts live here as the single source of truth. The
-// session script reads them via a JSON tag in the served HTML, which keeps
-// wording verbatim across UI and summary.
-const PROMPTS: ReadonlyArray<string> = [
-  "What's one money decision coming up in the next three months that affects both of you?",
-  "When you think about money in your household right now, what feels good — and what feels uncertain?",
-  "If a windfall of one month's take-home pay turned up tomorrow, no strings attached, what would each of you want to do with it?",
-  "What's a recurring expense you'd like to talk about — bigger, smaller, or just understood differently — but haven't?",
-  "Looking twelve months ahead, what's one thing about your money you'd like to feel more settled about?",
-  "Is there something about money you wish your partner understood about how you grew up with it?",
+type ArcId = "open" | "purchase";
+
+type Arc = {
+  id: ArcId;
+  name: string;
+  shortName: string;
+  ctaLabel: string;
+  ledeBlurb: string;
+  setupHeading: string;
+  setupLede: string;
+  prompts: ReadonlyArray<string>;
+};
+
+// The two arcs are the single source of truth for prompts and arc-level
+// copy. The session script reads them via a JSON tag in the served HTML so
+// wording stays verbatim across UI, summary, and print.
+const ARCS: ReadonlyArray<Arc> = [
+  {
+    id: "open",
+    name: "An open conversation",
+    shortName: "open conversation",
+    ctaLabel: "Start an open conversation",
+    ledeBlurb:
+      "Six broad prompts about how money sits in your household — near-term decisions, what feels good and uncertain, the year ahead.",
+    setupHeading: "Who is here?",
+    setupLede:
+      "Pop in your names so the prompts and summary can address each of you. Both partners share this device for the sitting.",
+    prompts: [
+      "What's one money decision coming up in the next three months that affects both of you?",
+      "When you think about money in your household right now, what feels good — and what feels uncertain?",
+      "If a windfall of one month's take-home pay turned up tomorrow, no strings attached, what would each of you want to do with it?",
+      "What's a recurring expense you'd like to talk about — bigger, smaller, or just understood differently — but haven't?",
+      "Looking twelve months ahead, what's one thing about your money you'd like to feel more settled about?",
+      "Is there something about money you wish your partner understood about how you grew up with it?",
+    ],
+  },
+  {
+    id: "purchase",
+    name: "A big upcoming purchase",
+    shortName: "big-purchase conversation",
+    ctaLabel: "Start a big-purchase conversation",
+    ledeBlurb:
+      "Five focused prompts for a household weighing a specific purchase — what it costs, what it changes, what you'd trade.",
+    setupHeading: "Who is here?",
+    setupLede:
+      "Pop in your names so the prompts and summary can address each of you. Both partners share this device for the sitting.",
+    prompts: [
+      "What is the purchase, and roughly how much are we talking about?",
+      "What would having it actually change about your day-to-day, in a sentence each?",
+      "What are you each willing to trade off for it — saving rate, another goal, a different timeframe?",
+      "What would have to be true about the rest of your finances for this to feel comfortable rather than tight?",
+      "If you imagine yourselves twelve months after the decision — bought it or didn't — what would each of you most want to be able to say?",
+    ],
+  },
 ];
+
+function findArc(id: string | null): Arc {
+  for (const arc of ARCS) {
+    if (arc.id === id) {
+      return arc;
+    }
+  }
+  return ARCS[0];
+}
 
 const sharedStyles = `
   :root {
@@ -148,6 +203,46 @@ const sharedStyles = `
     align-items: center;
     margin-top: 1.5rem;
   }
+  .arc-choices {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    margin: 0 0 2rem;
+  }
+  @media (min-width: 36rem) {
+    .arc-choices {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .arc-choice {
+    border: 1px solid var(--rule);
+    background: var(--field-bg);
+    border-radius: 0.6rem;
+    padding: 1.1rem 1.2rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .arc-choice h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  .arc-choice p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    flex: 1;
+  }
+  .arc-choice .arc-meta {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0;
+  }
+  .arc-choice a.cta {
+    align-self: flex-start;
+  }
   section.about {
     margin-top: 3rem;
     padding-top: 2rem;
@@ -163,6 +258,17 @@ const sharedStyles = `
     border-top: 1px solid var(--rule);
     font-size: 0.8rem;
     color: var(--muted);
+  }
+  .arc-tag {
+    display: inline-block;
+    margin: 0 0 1.25rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: var(--rule);
+    color: var(--fg);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
   .field {
     display: block;
@@ -576,6 +682,19 @@ const advisoryFooter = `
   </footer>
 `;
 
+function arcChoiceCard(arc: Arc): string {
+  const promptCount = arc.prompts.length;
+  const countWord = promptCount === 5 ? "Five" : "Six";
+  return `
+    <article class="arc-choice" data-arc="${arc.id}">
+      <p class="arc-meta">${countWord} prompts</p>
+      <h2>${arc.name}</h2>
+      <p>${arc.ledeBlurb}</p>
+      <a class="cta" href="/session?arc=${arc.id}" role="button" data-arc-cta="${arc.id}">${arc.ctaLabel}</a>
+    </article>
+  `;
+}
+
 const landingHtml = `<!doctype html>
 <html lang="en-GB">
   <head>
@@ -601,16 +720,26 @@ const landingHtml = `<!doctype html>
           Built for two or more people in a household to use side by side, not
           a dashboard for one person to log in to alone.
         </p>
-        <a class="cta" href="/session" role="button">Start a session</a>
-        <span class="cta-note">One device, two people, no sign-up.</span>
       </header>
+
+      <section aria-labelledby="choose-heading">
+        <h2 id="choose-heading">Choose a conversation</h2>
+        <p class="together">
+          Two arcs to pick from, both single-device and self-paced. Pick the
+          one that fits the sitting you're about to have.
+        </p>
+        <div class="arc-choices">
+          ${ARCS.map(arcChoiceCard).join("\n")}
+        </div>
+        <p class="cta-note">One device, two people, no sign-up.</p>
+      </section>
 
       <section class="about">
         <h2>What it is</h2>
         <p>
-          A guided sitting for a couple or household. You answer six
-          structured prompts together about near-term decisions, priorities,
-          and concerns, and end with a shared summary you can save as a PDF.
+          A guided sitting for a couple or household. You step through a small
+          set of structured prompts together, tag what you'd like to revisit,
+          and end with a shared summary you can save as a PDF.
         </p>
         <h2>What it isn't</h2>
         <p>
@@ -628,22 +757,32 @@ const landingHtml = `<!doctype html>
 
 // The session page is one HTML document with four sections (.step). A
 // small inlined script swaps which section is active, walks through the
-// six prompts with progress + back/next preserving answers, then a
-// reflection screen (tag prompts as "worth revisiting" with optional one-
-// line notes), then the summary. State persists in sessionStorage. The
-// summary's "Worth coming back to" section appears at the top whenever
-// any prompt has been tagged. No network calls. No third-party JS.
+// chosen arc's prompts with progress + back/next preserving answers, then
+// the reflection screen (tag prompts as "worth revisiting" with optional
+// one-line notes), then the summary. State persists in sessionStorage
+// under `common-ground.session.v2`, an object keyed by arc id so the two
+// arcs never share answers/tags/notes. No network calls. No third-party JS.
 const sessionScript = `
   (function () {
-    var STORAGE_KEY = "common-ground.session.v1";
+    var STORAGE_KEY = "common-ground.session.v2";
     var promptsTag = document.getElementById("prompts-data");
+    var arcMeta = { id: "open", name: "An open conversation", shortName: "open conversation" };
     var PROMPTS = [];
     try {
-      PROMPTS = JSON.parse(promptsTag.textContent || "[]");
+      var parsed = JSON.parse(promptsTag.textContent || "{}");
+      PROMPTS = Array.isArray(parsed.prompts) ? parsed.prompts : [];
+      if (parsed.arc && typeof parsed.arc === "object") {
+        arcMeta = {
+          id: typeof parsed.arc.id === "string" ? parsed.arc.id : "open",
+          name: typeof parsed.arc.name === "string" ? parsed.arc.name : "An open conversation",
+          shortName: typeof parsed.arc.shortName === "string" ? parsed.arc.shortName : "open conversation"
+        };
+      }
     } catch (err) {
       PROMPTS = [];
     }
     var TOTAL = PROMPTS.length;
+    var ARC_ID = arcMeta.id;
 
     var steps = {
       setup: document.getElementById("step-setup"),
@@ -684,29 +823,46 @@ const sessionScript = `
     var promptIndex = 0;
     var answers = [];
     var tags = [];
-    for (var i = 0; i < TOTAL; i++) {
-      answers.push({ a: "", b: "" });
-      tags.push({
-        a: { tagged: false, note: "" },
-        b: { tagged: false, note: "" }
-      });
+    function emptyArcSlots() {
+      var newAnswers = [];
+      var newTags = [];
+      for (var i = 0; i < TOTAL; i++) {
+        newAnswers.push({ a: "", b: "" });
+        newTags.push({
+          a: { tagged: false, note: "" },
+          b: { tagged: false, note: "" }
+        });
+      }
+      return { answers: newAnswers, tags: newTags };
     }
+    var initial = emptyArcSlots();
+    answers = initial.answers;
+    tags = initial.tags;
 
-    function readState() {
+    function readRoot() {
       try {
         var raw = sessionStorage.getItem(STORAGE_KEY);
         if (!raw) {
-          return null;
+          return {};
         }
-        return JSON.parse(raw);
+        var parsedRoot = JSON.parse(raw);
+        return parsedRoot && typeof parsedRoot === "object" ? parsedRoot : {};
       } catch (err) {
-        return null;
+        return {};
       }
     }
 
-    function writeState(extra) {
-      var state = {
-        step: extra && extra.step ? extra.step : ((readState() || {}).step || "setup"),
+    function readArcState() {
+      var root = readRoot();
+      var entry = root[ARC_ID];
+      return entry && typeof entry === "object" ? entry : null;
+    }
+
+    function writeArcState(extraStep) {
+      var root = readRoot();
+      var stepName = extraStep || ((root[ARC_ID] && root[ARC_ID].step) || "setup");
+      root[ARC_ID] = {
+        step: stepName,
         promptIndex: promptIndex,
         nameA: nameAEl.value || "",
         nameB: nameBEl.value || "",
@@ -715,15 +871,23 @@ const sessionScript = `
         resolvedNames: currentNames()
       };
       try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(root));
       } catch (err) {
         // Storage may be disabled; the in-memory page state still works.
       }
     }
 
-    function clearState() {
+    function clearArcState() {
+      var root = readRoot();
+      if (root && Object.prototype.hasOwnProperty.call(root, ARC_ID)) {
+        delete root[ARC_ID];
+      }
       try {
-        sessionStorage.removeItem(STORAGE_KEY);
+        if (Object.keys(root).length === 0) {
+          sessionStorage.removeItem(STORAGE_KEY);
+        } else {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(root));
+        }
       } catch (err) {
         // ignore
       }
@@ -741,7 +905,7 @@ const sessionScript = `
           steps[key].setAttribute("data-active", key === stepName ? "true" : "false");
         }
       });
-      writeState({ step: stepName });
+      writeArcState(stepName);
       // Move keyboard focus to the new step's heading for accessibility.
       var heading = steps[stepName] && steps[stepName].querySelector("h1, h2");
       if (heading) {
@@ -751,7 +915,7 @@ const sessionScript = `
     }
 
     function rehydrate() {
-      var state = readState();
+      var state = readArcState();
       if (!state) {
         return;
       }
@@ -812,7 +976,7 @@ const sessionScript = `
 
     function loadPromptAtIndex() {
       promptTextEl.textContent = PROMPTS[promptIndex];
-      progressTextEl.textContent = "Prompt " + (promptIndex + 1) + " of " + TOTAL;
+      progressTextEl.textContent = "Prompt " + (promptIndex + 1) + " of " + TOTAL + " — " + arcMeta.name;
       var pct = TOTAL > 0 ? ((promptIndex + 1) / TOTAL) * 100 : 0;
       progressBarFillEl.style.width = pct + "%";
       var entry = answers[promptIndex] || { a: "", b: "" };
@@ -827,7 +991,7 @@ const sessionScript = `
         backBtn.disabled = false;
       }
       // Next button reads "Reflect" on the final prompt — the reflection
-      // screen sits between prompt 6 and the summary.
+      // screen sits between the last prompt and the summary.
       if (promptIndex === TOTAL - 1) {
         nextBtn.textContent = "Reflect";
       } else {
@@ -937,7 +1101,7 @@ const sessionScript = `
           }
         }
       }
-      writeState({});
+      writeArcState();
     }
 
     function onReflectionNoteInput(event) {
@@ -959,7 +1123,7 @@ const sessionScript = `
         return;
       }
       tagEntry[side].note = target.value || "";
-      writeState({});
+      writeArcState();
     }
 
     function renderRevisit() {
@@ -1065,7 +1229,7 @@ const sessionScript = `
 
     [nameAEl, nameBEl].forEach(function (el) {
       el.addEventListener("input", function () {
-        writeState({});
+        writeArcState();
         updateLabelsFromNames();
       });
     });
@@ -1073,13 +1237,13 @@ const sessionScript = `
     [answerAEl, answerBEl].forEach(function (el) {
       el.addEventListener("input", function () {
         captureCurrentAnswers();
-        writeState({});
+        writeArcState();
       });
     });
 
     beginBtn.addEventListener("click", function () {
       promptIndex = 0;
-      writeState({});
+      writeArcState();
       loadPromptAtIndex();
       show("prompt");
     });
@@ -1089,7 +1253,7 @@ const sessionScript = `
       if (promptIndex > 0) {
         promptIndex -= 1;
       }
-      writeState({});
+      writeArcState();
       loadPromptAtIndex();
     });
 
@@ -1097,10 +1261,10 @@ const sessionScript = `
       captureCurrentAnswers();
       if (promptIndex < TOTAL - 1) {
         promptIndex += 1;
-        writeState({});
+        writeArcState();
         loadPromptAtIndex();
       } else {
-        writeState({});
+        writeArcState();
         renderReflection();
         show("reflection");
       }
@@ -1108,17 +1272,11 @@ const sessionScript = `
 
     restartLink.addEventListener("click", function (event) {
       event.preventDefault();
-      clearState();
+      clearArcState();
       promptIndex = 0;
-      answers = [];
-      tags = [];
-      for (var i = 0; i < TOTAL; i++) {
-        answers.push({ a: "", b: "" });
-        tags.push({
-          a: { tagged: false, note: "" },
-          b: { tagged: false, note: "" }
-        });
-      }
+      var fresh = emptyArcSlots();
+      answers = fresh.answers;
+      tags = fresh.tags;
       nameAEl.value = "";
       nameBEl.value = "";
       answerAEl.value = "";
@@ -1142,9 +1300,9 @@ const sessionScript = `
 
     if (reflectionBackBtn) {
       reflectionBackBtn.addEventListener("click", function () {
-        // Return to prompt 6 with all answers and tagging state preserved.
+        // Return to the final prompt with all answers and tagging state preserved.
         promptIndex = TOTAL - 1;
-        writeState({});
+        writeArcState();
         loadPromptAtIndex();
         show("prompt");
       });
@@ -1152,7 +1310,7 @@ const sessionScript = `
 
     if (reflectionNextBtn) {
       reflectionNextBtn.addEventListener("click", function () {
-        writeState({});
+        writeArcState();
         renderSummary();
         show("summary");
       });
@@ -1173,32 +1331,40 @@ const sessionScript = `
   })();
 `;
 
-const promptsJson = JSON.stringify(PROMPTS);
-
-const sessionHtml = `<!doctype html>
+function buildSessionHtml(arc: Arc): string {
+  const promptsJson = JSON.stringify({
+    prompts: arc.prompts,
+    arc: { id: arc.id, name: arc.name, shortName: arc.shortName },
+  });
+  const total = arc.prompts.length;
+  const initialPct = total > 0 ? (1 / total) * 100 : 0;
+  const summaryHeading = `Your ${arc.shortName}`;
+  const printHeading = `A household money conversation — ${arc.name}`;
+  return `<!doctype html>
 <html lang="en-GB">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Common Ground — your session</title>
+    <title>Common Ground — ${arc.name}</title>
     <meta
       name="description"
-      content="Step through six money conversation prompts together. State stays on this device."
+      content="Step through ${total} money conversation prompts together. State stays on this device."
     />
     <style>${sharedStyles}</style>
   </head>
-  <body>
+  <body data-arc="${arc.id}">
     <main>
       <header class="no-print">
         <p class="eyebrow">Common Ground</p>
+        <p class="arc-tag" id="arc-tag" data-arc="${arc.id}">${arc.name}</p>
       </header>
 
       <section id="step-setup" class="step" data-active="true" aria-labelledby="setup-heading">
-        <h1 id="setup-heading">Who is here?</h1>
+        <h1 id="setup-heading">${arc.setupHeading}</h1>
         <p class="lede">
-          Pop in your names so the prompts and summary can address each of
-          you. Both partners share this device for the sitting.
+          ${arc.setupLede}
         </p>
+        <p class="together">You're starting <strong>${arc.name}</strong>. <a href="/">Pick a different conversation</a>.</p>
         <div class="field">
           <label for="name-a">Your name</label>
           <input id="name-a" type="text" autocomplete="off" placeholder="You" />
@@ -1216,9 +1382,9 @@ const sessionHtml = `<!doctype html>
 
       <section id="step-prompt" class="step" data-active="false" aria-labelledby="prompt-heading">
         <h1 id="prompt-heading" class="visually-hidden" style="position:absolute;left:-9999px;">Prompt</h1>
-        <p class="progress" id="progress-text" aria-live="polite">Prompt 1 of 6</p>
+        <p class="progress" id="progress-text" aria-live="polite">Prompt 1 of ${total} — ${arc.name}</p>
         <div class="progress-bar" aria-hidden="true">
-          <span id="progress-bar-fill" style="width: 16.66%"></span>
+          <span id="progress-bar-fill" style="width: ${initialPct.toFixed(2)}%"></span>
         </div>
         <p class="prompt" id="prompt-text"></p>
         <p class="together">
@@ -1248,10 +1414,11 @@ const sessionHtml = `<!doctype html>
       <section id="step-reflection" class="step" data-active="false" aria-labelledby="reflection-heading">
         <h1 id="reflection-heading">Anything to come back to?</h1>
         <p class="reflection-intro">
-          Before the summary, take a moment together. Tag any prompts that
-          either of you would like to revisit later in the week — and add a
-          one-line note if it helps. Skipping the lot is a feature; the
-          conversation does not need a homework list.
+          Before the summary, take a moment together. Tag any prompts from
+          <strong>${arc.name}</strong> that either of you would like to revisit
+          later in the week — and add a one-line note if it helps. Skipping
+          the lot is a feature; the conversation does not need a homework
+          list.
         </p>
         <p class="reflection-hint">
           Each of you decides for yourselves. The other partner's tag does
@@ -1271,12 +1438,12 @@ const sessionHtml = `<!doctype html>
       <section id="step-summary" class="step" data-active="false" aria-labelledby="summary-heading">
         <div class="print-only">
           <p class="eyebrow">Common Ground</p>
-          <h1>A household money conversation</h1>
+          <h1>${printHeading}</h1>
           <p class="summary-meta">
             <span id="print-names"></span> · <span id="print-date"></span>
           </p>
         </div>
-        <h1 id="summary-heading" class="no-print">Your summary</h1>
+        <h1 id="summary-heading" class="no-print">${summaryHeading}</h1>
         <p class="summary-meta no-print">
           <span id="summary-names"></span> · <span id="summary-date"></span>
         </p>
@@ -1315,6 +1482,7 @@ const sessionHtml = `<!doctype html>
   </body>
 </html>
 `;
+}
 
 function htmlResponse(body: string): Response {
   return new Response(body, {
@@ -1329,7 +1497,9 @@ export default {
   fetch(request: Request): Response {
     const url = new URL(request.url);
     if (url.pathname === "/session" || url.pathname === "/session/") {
-      return htmlResponse(sessionHtml);
+      const arcParam = url.searchParams.get("arc");
+      const arc = findArc(arcParam);
+      return htmlResponse(buildSessionHtml(arc));
     }
     if (url.pathname === "/" || url.pathname === "") {
       return htmlResponse(landingHtml);

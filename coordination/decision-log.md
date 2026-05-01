@@ -16,6 +16,62 @@ new entry that references the previous one.
 
 ---
 
+## 2026-05-01 02:40 — Pick "second arc" over pacing affordances; treat the arc itself as the unit
+
+**Context:** Second rival check just landed (`coordination/rival-state.md` 2026-05-01 02:35). Roundtable shipped their MVP as "two devices, five prompts, simultaneous reveal" — each partner answers privately, then both answers are revealed at once. Different conversational dynamic to ours. Their landing page surface is unchanged; the new signal is in the blog post. Both teams now have shipped MVPs, with closing-reflection just shipped on our side.
+
+The previous decision-log entry deferred a choice between two next-slice candidates: a *second arc* (a short alternative session for a different occasion, same tagging + summary mechanism) or *pacing affordances* (read-aloud cues, "swap who types first" affordances, soft pause-and-come-back state). This entry resolves it.
+
+**Choice:** Build a **second arc** — a separately curated, shorter conversation arc for a specific occasion, accessed from the landing/setup screen as a session-type selector. The "Big upcoming purchase" arc is the working candidate; final prompt list to be confirmed in the task brief.
+
+**Rationale:**
+- *Direct response to "deck of five".* Roundtable's MVP positions a fixed five-prompt deck as the product. The right counterpunch is not a longer deck but a different *kind* of move: demonstrating that Common Ground treats the arc itself as the unit of work — we curate sessions, plural, for different occasions. That generalises a thing we have already invested heavily in (prompt curation) rather than racing them on plumbing we have already chosen not to build.
+- *The mechanic generalises cleanly.* Setup → prompts → reflection ("Worth coming back to") → summary → save. The reflection step works for any arc because it just references "any of these prompts". We get to demonstrate the architecture is doing real work, not specific to the original six.
+- *Distinguishes on a different axis.* Their differentiation is "simultaneous reveal". Ours becomes "we have a vocabulary of conversations, not one fixed question set". These can coexist in the market without converging.
+- *Pacing affordances are weaker for this slot.* Read-aloud cues are text-only nudges; they do not visibly add to the product the way a second arc does. Pass-the-device or swap-who-types-first features ride the same in-room pairing axis but require more state-tracking for less observable value. They can come later or never; nothing about this decision precludes them.
+- *Curating "Big upcoming purchase" is in character for a non-crisis household (per the brief).* It is concrete and decision-oriented, narrower than the original six, and elicits without prescribing. A different vibe to the broad reflective opener arc.
+
+**Reversible?** Yes — adding a second arc does not constrain future moves. If the second arc lands and pacing turns out to matter, we can revisit then.
+
+**Working spec for the next task (to be tightened when current-task.md is written):**
+- A landing/setup-level *session type* selector with two named arcs: the existing six-prompt arc (provisional name to confirm in task — perhaps "A money conversation" or "An open conversation") and the new "A big upcoming purchase" arc (5 prompts, curated by the Orchestrator and locked verbatim like the first six).
+- The new arc reuses the existing setup → prompt → reflection → summary → print flow, with the prompt list and the "current arc" name swapping based on selection.
+- Cross-arc state isolation in `sessionStorage` so resuming or restarting one arc does not leak into the other. Explicitly: each arc has its own answers/tags/notes; choosing a session type at setup is the entry point to either.
+- The second arc must be visible on the landing page as a parallel option, not buried — both the landing CTA and the setup screen reflect the choice.
+- Privacy posture, advice line, British English, mobile readability, single-device-only — all unchanged.
+
+**Pending hand-offs to close before assigning the task:** Closing-reflection post is queued (`coordination/blog-queue.md`). Per the role rules, the Orchestrator's next action is to hand to the Writer. Engineering on the second arc waits for the next cycle.
+
+**Curated prompts for the second arc (orchestrator-locked; the task will require these verbatim):**
+1. *"What is the purchase, and roughly how much are we talking about?"*
+2. *"What would having it actually change about your day-to-day, in a sentence each?"*
+3. *"What are you each willing to trade off for it — saving rate, another goal, a different timeframe?"*
+4. *"What would have to be true about the rest of your finances for this to feel comfortable rather than tight?"*
+5. *"If you imagine yourselves twelve months after the decision — bought it or didn't — what would each of you most want to be able to say?"*
+
+These follow the same elicit-not-prescribe rule: each asks the household what *they* think or are willing to do, with no prescription about what the right answer looks like. Order is concrete (what + how much) → felt (what changes) → values (what to trade) → conditions (what would make it comfortable) → forward-looking (twelve months out). All five are skippable.
+
+---
+
+## 2026-05-01 02:30 — Accept closing reflection; queue post + run second rival check
+
+**Context:** Reviewer returned PASS on the closing reflection slice (commit `5ddbe628`, final commit `7a3a16f`, wrangler version `336e69d9-32d4-4c7e-a42b-491377027be0`). 49/49 Playwright tests passing against the deployed URL, including a fresh 14-test suite covering each DoD-8 sub-item: per-partner tagging, persistence across Back/Next, distinct on-screen "Worth coming back to" rendering, print-emulation top-ordering, network-watch through the full flow with sentinel notes, mobile readability at 375px. Privacy posture intact — same `sessionStorage` key, no `localStorage`/cookies/fetch/XHR/sendBeacon in the served `/session` source.
+
+**What shipped (concretely):** A seventh screen between prompt 6 and the summary asking "Anything to come back to?". Each partner can tag any of the existing six prompts as worth revisiting and add a one-line note. Tagged prompts surface in a "Worth coming back to" section at the top of both the on-screen summary and the printed PDF. Skipping the reflection entirely is allowed and renders the summary identically to the pre-reflection layout. Wording of the six prompts is untouched.
+
+**Choice:** Accept the milestone. Queue a release-notes-style blog post. Run the second rival check before assigning the next task, per the role rules.
+
+**Rationale for the queued post angle:** This is not a launch post and not a design-decision post — it is the first true *release note* for Common Ground. The angle should be short and concrete: what shipped, what it feels like in a session, the design choice that tagged order matches original prompt order (no scoring, no ranking, no "you should revisit this"), and one line connecting it to the position established in the launch post — we said we would lean into the conversation arc rather than the plumbing, this is the tangible follow-through. The Writer can decide whether to bundle it with anything else queued; the Orchestrator's job is just to ensure nothing ships silently.
+
+**Reversible?** N/A — the post records what happened.
+
+**Next direction (provisional, refine after second rival check):** Two candidates worth weighing once we see what Roundtable has done since 01:35:
+- *Second arc.* A short alternative session for a different occasion — annual review, big purchase decision, or onboarding a new shared expense. Same tagging + summary mechanism, different curated prompts. Strengthens the "the session is a thing, not just six questions" framing without touching plumbing.
+- *Pacing affordances.* "Pass the device" cues, optional read-aloud framing for prompts, a soft pause-and-come-back state — features that only make sense for two people on one device. Distinguishes the product on its own terms rather than in opposition to Roundtable.
+Hold the choice until after the rival check.
+
+---
+
 ## 2026-05-01 01:40 — Hold single-device line; next slice strengthens the conversation, not the plumbing
 
 **Context:** First rival check just landed (see `coordination/rival-state.md` 2026-05-01 01:35). Rival product is **Roundtable**, same brief, materially different choices: multi-device join handshake, server-side session storage on Cloudflare KV with a 24-hour TTL, no PII. Their landing page and RSS show no prompt content — we cannot tell what they ask households to discuss without walking their two-device session. The previous decision-log entry deferred the next-task choice to "after rival check + a fresh look at the brief"; this entry resolves it.

@@ -3,133 +3,179 @@
 Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 `Status` field as work progresses.
 
-**Task:** Add a closing reflection step — a seventh screen (not a seventh prompt) where each partner tags any of the six prompts as "worth revisiting" with an optional one-line note. Tagged items appear at the top of the summary and the printed PDF.
-**Assigned:** 2026-05-01 02:00
-**Status:** awaiting review
+**Task:** Add a second arc — "A big upcoming purchase" — alongside the existing six-prompt arc, selectable on the landing/setup. Five Orchestrator-curated prompts (verbatim below). Reuses setup → prompts → reflection → summary → print. Per-arc state isolation in `sessionStorage`.
+**Assigned:** 2026-05-01 03:00
+**Status:** assigned
 **Notes:**
-
-- Shipped at commit `5ddbe628421b3f170a010d8d56ddb81fd60254b7`, wrangler version `336e69d9-32d4-4c7e-a42b-491377027be0`, deployed URL https://rivals-team-beta-product.kevin-wilson.workers.dev.
-- Full Playwright suite (49 tests across landing, smoke, session-flow, six-prompt-arc-verifier, reflection) passes against the deployed URL in 4.9s.
-- `coordination/review-queue.md` has a fresh entry with an item-by-item checklist mapping to the 11 numbered DoD items.
 
 ## Context
 
-MVP is shipped (commit `38e2d55`, Reviewer PASS, launch post live). First
-rival check done — Roundtable went the opposite direction (multi-device,
-server-side KV with 24-hour TTL). The binding decision for what comes next
-is in `coordination/decision-log.md`, entry **2026-05-01 01:40 "Hold
-single-device line; next slice strengthens the conversation, not the
-plumbing"**. Read it before starting — it explains *why* the next slice
-is a closing reflection rather than a multi-device push or any other
-feature.
+Closing reflection slice shipped (commit `5ddbe628`, Reviewer PASS, release
+note live). Second rival check done — Roundtable's MVP is "two devices,
+five prompts, simultaneous reveal" (see `coordination/rival-state.md`
+2026-05-01 02:35). Their five-prompt deck appears static.
 
-The point of this slice: a session of six prompts ends with a *summary*;
-that's a record. A session that also asks "anything to come back to?"
-ends with something the household can take into the rest of their week.
-The tool elicits — it does not prescribe what to revisit, score, or rank.
+The binding decision for what comes next is in `coordination/decision-log.md`,
+entry **2026-05-01 02:40 "Pick 'second arc' over pacing affordances; treat
+the arc itself as the unit"**. Read it before starting — it explains *why*
+the next slice is a second arc and not pacing affordances or anything else,
+and it locks the five prompts for the new arc verbatim.
+
+The point of this slice: Common Ground demonstrates that the *arc itself*
+is the unit of product work — we curate sessions, plural, for different
+occasions. Roundtable's "deck of five" is one fixed conversation; ours
+becomes a small library. This generalises the prompt-curation work we
+have already done without touching plumbing or our single-device stance.
 
 ## Definition of done
 
 All of the following must be true on the deployed URL,
 https://rivals-team-beta-product.kevin-wilson.workers.dev:
 
-1. **A seventh screen** is inserted between prompt 6 and the summary.
-   - Heading and copy of your choice in the spirit of *"Anything to come
-     back to?"* — your judgement on exact phrasing, but the framing must
-     be clear: the household is choosing what they each want to revisit
-     later, and skipping is a feature.
-   - For each of the six prompts, a row showing:
-     - The prompt text (truncated tastefully if long, or full — your call).
-     - A tag control for each partner (checkbox or toggle, labelled with
-       their name from setup, defaulting to off).
-     - A one-line note input per partner, only required to be visible/usable
-       once that partner has tagged the prompt — empty notes are allowed.
-   - A **Back** control returns to prompt 6 with all six prompt answers and
-     all tagging state preserved.
-   - A **See summary** control advances.
-   - It must be possible to advance with zero tags and zero notes — skipping
-     the whole reflection is fine.
+1. **Two named arcs exist in the product.** The existing six-prompt arc
+   keeps its prompts unchanged and gets a clear name — propose
+   **"An open conversation"** unless you have a strongly better one;
+   either way, name it consistently across landing, setup, prompt header,
+   summary, and print. The new arc is **"A big upcoming purchase"** with
+   the five verbatim prompts listed below.
 
-2. **Summary screen update.**
-   - If any prompts have been tagged by either partner, a clearly distinct
-     **"Worth coming back to"** section appears at the top of the summary,
-     above the existing six-prompt list.
-     - Each tagged prompt appears once, with the partners who tagged it
-       labelled by name, and any notes shown beneath, again labelled.
-     - If both partners tagged the same prompt, both names show on that
-       row (and both notes if present).
-   - If no prompts are tagged, the summary renders exactly as before — no
-     empty section, no "(none)" placeholder.
-   - Existing skipped/answered behaviour for the six prompts in the lower
-     section is unchanged.
-   - "Start a new session" still clears all state, including tags and notes.
+2. **The five prompts for the new arc, verbatim and in order — do not
+   rephrase, do not reorder, do not add or remove:**
 
-3. **Print path.**
-   - The "Save as PDF" / `window.print()` button still works.
-   - The "Worth coming back to" section, when present, appears at the top
-     of the printed A4 output, in the same legible weight as the rest of
-     the summary content (not microscopic).
-   - Hidden chrome / disclaimer footer behaviour unchanged.
+   1. *"What is the purchase, and roughly how much are we talking about?"*
+   2. *"What would having it actually change about your day-to-day, in a
+      sentence each?"*
+   3. *"What are you each willing to trade off for it — saving rate,
+      another goal, a different timeframe?"*
+   4. *"What would have to be true about the rest of your finances for
+      this to feel comfortable rather than tight?"*
+   5. *"If you imagine yourselves twelve months after the decision —
+      bought it or didn't — what would each of you most want to be able
+      to say?"*
 
-4. **Privacy posture preserved.**
-   - Tags and notes live only in `sessionStorage` — same model as answers.
-     No new persistence, no fetches that send tag/note text.
-   - Verify the served JS at `/session` (or wherever the seventh screen
-     lives) still contains zero `fetch(`/`XMLHttpRequest`/`sendBeacon`
-     tokens. If you split source files, check the bundled output too.
+3. **Arc selection.**
+   - The landing page surfaces both arcs as parallel options. The single
+     "Start a session" CTA is upgraded into a clear choice between the
+     two — wording is your call (e.g. "Start an open conversation" /
+     "Start a big-purchase conversation", or a "Choose a conversation"
+     screen between landing and setup). Both arcs must be visibly equal
+     citizens; do not hide the new one in a secondary link.
+   - The chosen arc is communicated through the rest of the flow — the
+     setup screen, prompt header (e.g. "Prompt 3 of 5 — A big upcoming
+     purchase"), and the summary heading should make it clear which
+     conversation is being held.
 
-5. **Wording for the six prompts is unchanged.** Do not rephrase. Do not
-   add a seventh prompt. The reflection step references the existing six.
+4. **Flow reuse.** Setup (partner names) → prompts (the chosen arc's list,
+   in order, with progress + back/next preserving answers) → reflection
+   ("Anything to come back to?" still references the chosen arc's prompts,
+   not the other arc's) → summary (with "Worth coming back to" at the top
+   when applicable) → print path. No new flow shape — just per-arc data
+   driving the same screens.
 
-6. **British English** in all new copy.
-7. **Mobile-readable.** The reflection screen must work at 375px width
-   without horizontal scroll. A row per prompt is fine; consider stacking
-   the two partners' controls per row at narrow widths.
+5. **Per-arc state isolation in `sessionStorage`.**
+   - State for one arc must not leak into the other. Concrete requirement:
+     starting an open-conversation session, leaving partway, and then
+     starting a big-purchase session must show empty inputs in the new
+     arc — and vice versa.
+   - Returning to a previously-started arc *may* restore that arc's
+     prior state — your judgement, but if you do, document the behaviour
+     visibly (e.g. "Continue your open conversation" vs "Start fresh"),
+     and ensure "Start a new session" from the summary clears the
+     state for the arc it was started from. If implementing resume is
+     awkward, simply isolate state per arc on session start and do not
+     resume — that is acceptable for this slice.
+   - The `common-ground.session.v1` key may evolve into something like
+     `common-ground.session.v2` keyed by arc id, or a single object
+     with sub-keys per arc. Implementation detail; choose what is
+     simplest and document briefly in a code comment ONLY IF the
+     reasoning would otherwise be opaque to a future reader.
 
-8. **Tests.** Extend the Playwright suite to cover, against the deployed URL:
-   - Tagging works for either partner; tags persist across Back/Next.
-   - Skipping the reflection entirely (zero tags) renders the summary
-     exactly as it did pre-reflection (no extra section).
-   - Tagged prompts appear in the "Worth coming back to" section with
-     correct partner labels and notes.
-   - Print emulation shows the "Worth coming back to" section at the top
-     of the printed output when tags exist.
-   - Network watch through the full flow (six prompts + reflection +
-     summary + print click) shows zero non-GET requests.
+6. **Reflection step references the chosen arc's prompts.** The "Anything
+   to come back to?" screen lists the five prompts of the big-purchase
+   arc when that arc is being walked, the six prompts of the open arc
+   when that one is. No cross-arc tagging.
 
-9. **README.** A small refresh to the "How to use" section so it mentions
-   the closing reflection step. One or two sentences. Don't bloat it.
+7. **Summary and print.**
+   - The summary heading names which arc is being summarised (e.g.
+     "Your big-purchase conversation").
+   - "Worth coming back to" still appears at the top when at least one
+     prompt is tagged, omitted otherwise, in the original prompt order
+     of *the chosen arc*.
+   - The printed A4 layout still produces a clean, legible output —
+     hidden chrome, disclaimer footer once and legibly. The arc name
+     should appear in the printed heading so a household with two
+     printed PDFs can tell them apart at a glance.
 
-10. `pnpm --filter product run deploy` succeeds (note: bare `pnpm --filter
-    product deploy` collides with pnpm 10's built-in deploy command — use
-    `run deploy`). Verify the deployed URL with `curl` on the routes you
-    use, and run the full Playwright suite against the deployed URL with
+8. **Privacy posture preserved.**
+   - No new persistence beyond `sessionStorage`. No KV, D1, Durable
+     Objects, cookies, or remote fetches that send any answer / tag /
+     note text.
+   - Verify the served JS at the session route(s) still contains zero
+     `fetch(`/`XMLHttpRequest`/`sendBeacon` tokens. If you split source
+     files or change the route shape, check the bundled output.
+
+9. **No advice, no scoring, no ranking.** Tagged items still appear in
+   the original prompt order of the chosen arc. The selector itself
+   does not "recommend" an arc — both options are presented neutrally,
+   without a "popular" / "recommended" / "good for beginners" framing.
+
+10. **British English** in all new copy, including the arc names, the
+    selector, and any new headings.
+
+11. **Mobile-readable.** The arc selector and the new big-purchase flow
+    must work at 375px width without horizontal scroll. Both arcs'
+    summary screens must remain readable on a phone.
+
+12. **Six-prompt arc wording is unchanged.** Do not edit the existing
+    six prompts' text or order under any circumstance.
+
+13. **Tests.** Extend the Playwright suite, against the deployed URL:
+    - Both arcs are reachable from the landing surface.
+    - Walking the big-purchase arc produces a summary that lists the
+      five verbatim prompts in order.
+    - Walking the open arc still produces the existing six-prompt
+      summary in the existing order (regression).
+    - Per-arc state isolation: start arc A, partially answer, then
+      switch to arc B from the landing — arc B's inputs are empty.
+    - Reflection step on the big-purchase arc lists exactly its five
+      prompts (no leakage from the other arc).
+    - Print emulation on the big-purchase arc produces a clean A4
+      summary with the arc named in the heading and "Worth coming
+      back to" at the top when tags exist.
+    - Network watch through both arcs end-to-end (six prompts AND five
+      prompts paths, including print clicks): zero non-GET requests.
+
+14. **README "How to use"** updated to mention there are now two
+    conversations available and how to choose between them. One short
+    paragraph or a renumbered list — do not bloat. British English.
+
+15. `pnpm --filter product run deploy` succeeds. Verify the deployed
+    URL with `curl` on the routes you use, and run the full Playwright
+    suite against the deployed URL with
     `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev
     pnpm --filter product run test:e2e`. Report the version id and the
-    test count.
+    test count in your review-queue entry.
 
-11. Append a fresh entry to `coordination/review-queue.md`: commit SHA,
-    deployed URL, version id, and an explicit checklist for the Reviewer
-    covering each numbered DoD item above.
+16. Append a fresh entry to `coordination/review-queue.md`: commit SHA,
+    deployed URL, version id, and an explicit Reviewer checklist
+    mapping item-by-item to the numbered DoD items above.
 
 ## Constraints / scope guard rails
 
-- **No framework.** Same as before. If the single Worker file is getting
-  unwieldy you may split source under `apps/product/src/` (multiple TS
-  files compiled by wrangler) but the deploy stays a single Worker.
-- **No persistence.** No KV, D1, Durable Objects, cookies. `sessionStorage`
-  only. The privacy claim is now demonstrable in public — do not weaken it.
-- **No auth.** No accounts, no pairing.
-- **No multi-device.** This is the deliberate stance per the 01:40
-  decision-log entry. Resist any temptation to add "share via link"
-  even if it seems harmless.
-- **No advice.** The reflection step asks the household what *they* want
-  to revisit. The tool does not flag, score, rank, recommend, or sort.
-  Tagged order should match the original prompt order, not any imputed
-  importance.
-- **British English** throughout.
-- **No blog post.** The Orchestrator queues posts at milestones; do not
-  edit anything under `apps/blog/`.
+- **No framework.** Same as before. Splitting source files under
+  `apps/product/src/` is fine if the single file is getting unwieldy,
+  but the deploy stays a single Worker.
+- **No persistence beyond `sessionStorage`.** No KV, D1, Durable
+  Objects, cookies. The privacy claim is now public and demonstrable;
+  do not weaken it.
+- **No auth, no multi-device, no share-link.** Single-device-together
+  is the deliberate stance — see decision-log 2026-05-01 01:40.
+- **No third arc, no extra prompts.** Two arcs only this slice. Five
+  prompts in the new arc, six in the existing one. Verbatim wording.
+- **No advice, ranking, scoring, recommendation.** Both arcs are
+  presented as equal options. Tagged items in original prompt order.
+- **No blog post.** The Orchestrator queues posts at milestones; do
+  not edit anything under `apps/blog/`.
 - **Do not edit `coordination/decision-log.md`** — Orchestrator only.
 
 ## When done
