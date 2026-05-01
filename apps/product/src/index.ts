@@ -393,6 +393,25 @@ const sharedStyles = `
     font-size: 0.95rem;
     margin: 0 0 1.5rem;
   }
+  .summary-meta .meta-names {
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .print-only .print-meta {
+    margin: 0.5rem 0 1.5rem;
+    font-size: 12pt;
+    color: #000000;
+    line-height: 1.4;
+  }
+  .print-only .print-meta .print-meta-names {
+    font-weight: 600;
+    display: block;
+  }
+  .print-only .print-meta .print-meta-date {
+    color: #444444;
+    display: block;
+    margin-top: 0.15rem;
+  }
   .reflection-intro {
     color: var(--fg);
     margin: 0 0 1rem;
@@ -923,6 +942,10 @@ const sessionScript = `
     // Per-arc take-aways: one short string per partner. Both blank means the
     // summary omits the take-aways section entirely.
     var takeaways = { a: "", b: "" };
+    // Per-arc summary date: captured once when the summary is first reached
+    // and reused on subsequent renders/prints. Stored as an ISO string;
+    // formatted at render time. Empty until first capture.
+    var summaryDate = "";
     function emptyArcSlots() {
       var newAnswers = [];
       var newTags = [];
@@ -933,12 +956,18 @@ const sessionScript = `
           b: { tagged: false, note: "" }
         });
       }
-      return { answers: newAnswers, tags: newTags, takeaways: { a: "", b: "" } };
+      return {
+        answers: newAnswers,
+        tags: newTags,
+        takeaways: { a: "", b: "" },
+        summaryDate: ""
+      };
     }
     var initial = emptyArcSlots();
     answers = initial.answers;
     tags = initial.tags;
     takeaways = initial.takeaways;
+    summaryDate = initial.summaryDate;
 
     function readRoot() {
       try {
@@ -970,6 +999,7 @@ const sessionScript = `
         answers: answers,
         tags: tags,
         takeaways: { a: takeaways.a || "", b: takeaways.b || "" },
+        summaryDate: summaryDate || "",
         resolvedNames: currentNames()
       };
       try {
@@ -1066,6 +1096,9 @@ const sessionScript = `
           b: typeof state.takeaways.b === "string" ? state.takeaways.b : ""
         };
       }
+      if (typeof state.summaryDate === "string") {
+        summaryDate = state.summaryDate;
+      }
       // Default to setup on reload — restarting the page should not skip ahead.
     }
 
@@ -1123,8 +1156,16 @@ const sessionScript = `
       updateLabelsFromNames();
     }
 
-    function formatToday() {
-      var d = new Date();
+    function formatStoredDate(iso) {
+      var d;
+      if (iso) {
+        d = new Date(iso);
+        if (isNaN(d.getTime())) {
+          d = new Date();
+        }
+      } else {
+        d = new Date();
+      }
       try {
         return d.toLocaleDateString("en-GB", {
           day: "numeric",
@@ -1134,6 +1175,39 @@ const sessionScript = `
       } catch (err) {
         return d.toDateString();
       }
+    }
+
+    // Capture the date once when the summary is first reached for this arc.
+    // Subsequent visits to the summary (Back/Next, restart-and-redo, print
+    // later) reuse the stored ISO so the rendered date never silently
+    // changes underneath a household.
+    function captureSummaryDateIfNeeded() {
+      if (!summaryDate) {
+        summaryDate = new Date().toISOString();
+        writeArcState();
+      }
+    }
+
+    // Build the partners' names line for the metadata block. British
+    // English: "and" between names, never an ampersand. The defensive
+    // single-name case (one input filled, one blank) renders just the
+    // filled name without the conjunction.
+    function partnerNamesLine() {
+      var rawA = (nameAEl.value || "").trim();
+      var rawB = (nameBEl.value || "").trim();
+      if (rawA !== "" && rawB !== "") {
+        return rawA + " and " + rawB;
+      }
+      if (rawA !== "") {
+        return rawA;
+      }
+      if (rawB !== "") {
+        return rawB;
+      }
+      // Both blank — fall back to the placeholder pair so the metadata is
+      // never missing entirely. A completed session always has both names.
+      var fallback = currentNames();
+      return fallback.a + " and " + fallback.b;
     }
 
     function escapeHtml(value) {
@@ -1337,11 +1411,12 @@ const sessionScript = `
 
     function renderSummary() {
       var names = currentNames();
-      var dateText = formatToday();
-      summaryNamesEl.textContent = names.a + " and " + names.b;
+      var namesLine = partnerNamesLine();
+      var dateText = formatStoredDate(summaryDate);
+      summaryNamesEl.textContent = namesLine;
       summaryDateEl.textContent = dateText;
       if (printNamesEl) {
-        printNamesEl.textContent = names.a + " and " + names.b;
+        printNamesEl.textContent = namesLine;
       }
       if (printDateEl) {
         printDateEl.textContent = dateText;
@@ -1433,6 +1508,7 @@ const sessionScript = `
       answers = fresh.answers;
       tags = fresh.tags;
       takeaways = fresh.takeaways;
+      summaryDate = fresh.summaryDate;
       nameAEl.value = "";
       nameBEl.value = "";
       answerAEl.value = "";
@@ -1515,6 +1591,10 @@ const sessionScript = `
         if (takeawayBEl) {
           takeaways.b = takeawayBEl.value || "";
         }
+        // Capture the session date once, the moment the summary is first
+        // reached for this arc. Reaching it again (Back from summary, then
+        // forward) is a no-op.
+        captureSummaryDateIfNeeded();
         writeArcState();
         renderSummary();
         show("summary");
@@ -1671,13 +1751,14 @@ function buildSessionHtml(arc: Arc): string {
         <div class="print-only">
           <p class="eyebrow">Common Ground</p>
           <h1>${printHeading}</h1>
-          <p class="summary-meta">
-            <span id="print-names"></span> · <span id="print-date"></span>
+          <p class="print-meta">
+            <span class="print-meta-names" id="print-names"></span>
+            <span class="print-meta-date" id="print-date"></span>
           </p>
         </div>
         <h1 id="summary-heading" class="no-print">${summaryHeading}</h1>
         <p class="summary-meta no-print">
-          <span id="summary-names"></span> · <span id="summary-date"></span>
+          <span class="meta-names" id="summary-names"></span> · <span id="summary-date"></span>
         </p>
         <p class="lede no-print">
           The conversation is yours. Common Ground does not store this and
