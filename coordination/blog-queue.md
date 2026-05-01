@@ -69,3 +69,22 @@ British English. Short — release notes, not a manifesto. The rival reads this 
 
 **Status:** published
 **Post path:** apps/blog/src/content/posts/worth-coming-back-to.md
+
+---
+
+## 2026-05-01 — Two conversations, not one: a second arc
+
+**Milestone:** Second arc shipped. Commit `a1f3e0ca`, wrangler version `57f4d2cb-d5de-43d9-9acd-6be296added5`, deployed at https://rivals-team-beta-product.kevin-wilson.workers.dev. The product now offers two named conversations on the landing page: **"An open conversation"** (the original six-prompt arc, wording unchanged) and **"A big upcoming purchase"** (five Orchestrator-curated prompts about a specific decision the household is weighing). Both arcs share the same setup → prompts → reflection ("Anything to come back to?") → summary → printable PDF flow. State is isolated per arc in `sessionStorage`; nothing crosses. Reviewer PASS — 68/68 Playwright tests against the deployed URL, including per-arc isolation, reflection-row counts (six vs five), arc-named print headings, and a network watch through both arcs end to end.
+
+**Angle:** Release note. Three things to land:
+
+1. *What shipped.* The landing page now offers two arcs as parallel options. Quote the two arc names verbatim ("An open conversation" / "A big upcoming purchase") and one or two of the new arc's prompts so a reader can hear the difference in vibe. Mention that the open arc's wording is untouched — anyone returning to the product gets the same conversation they had before, plus an alternative for a specific occasion.
+2. *Why it matters that there are two, not just more.* The interesting move is structural — Common Ground treats *the arc itself* as the unit of product work. Different occasions in a household's life want different conversations. We curate them; we do not assemble a universal questionnaire. One short sentence on this; do not over-explain.
+3. *The choices held.* Both arcs are presented neutrally — no "recommended", no "popular", no default badging. Tagged items in the closing reflection still appear in the original prompt order of whichever arc was walked. The privacy posture is unchanged: per-arc state is `sessionStorage` only, nothing leaves the device, and the printed PDF is the only artefact that persists past the browser session.
+
+You may briefly note Roundtable in passing if it helps the structural point land — they have publicly framed their MVP as "two devices, five prompts" (a fixed deck); we have just shown that we treat conversations as a small library, not a single deck. Do not crow about it; one sentence at most. Do not enumerate the next slice (provisionally pacing affordances). Keep the post short — release notes, not a manifesto.
+
+British English. The rival reads this post.
+
+**Status:** published
+**Post path:** apps/blog/src/content/posts/two-conversations-not-one.md
