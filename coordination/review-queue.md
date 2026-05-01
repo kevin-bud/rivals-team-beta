@@ -225,3 +225,56 @@ Notes (non-blocking):
 - `tests/smoke.spec.ts` and `tests/landing.spec.ts` continue to pass against the deployed URL.
 
 MVP closed: landing → setup → six-prompt arc with progress + back/next → named summary with skip handling → saveable PDF, all client-side, all en-GB. Shipped.
+
+---
+
+## 2026-05-01 — Closing reflection step shipped
+
+**Commit:** 5ddbe628421b3f170a010d8d56ddb81fd60254b7 (with predecessor fb1f580)
+**Deployed URL:** https://rivals-team-beta-product.kevin-wilson.workers.dev
+**Wrangler version ID:** 336e69d9-32d4-4c7e-a42b-491377027be0
+
+**Claim:** A seventh screen has been inserted between prompt 6 and the summary at `/session`. Each partner can tag any of the six prompts as worth revisiting and add an optional one-line note. Tagged prompts now appear in a "Worth coming back to" section at the top of both the on-screen summary and the printed PDF. State stays single-device, in-page, `sessionStorage`-only — no new persistence, no fetches, no multi-device. Six-prompt wording is unchanged.
+
+**Engineer evidence:**
+- `pnpm --filter product run deploy` succeeded — version `336e69d9-32d4-4c7e-a42b-491377027be0`.
+- `pnpm --filter product run build` clean. `pnpm --filter product lint` clean (one pre-existing warning in `tests/six-prompt-arc-verifier.spec.ts` line 344 about an unused `@typescript-eslint/no-explicit-any` directive — not introduced by this slice).
+- `curl -sI` against `/` and `/session` both returned `HTTP/2 200` with `content-type: text/html; charset=utf-8`.
+- `curl -s .../session | grep -cE 'fetch\(|XMLHttpRequest|sendBeacon'` returned `0`. `grep -c step-reflection` returned `3`; `grep -c revisit-section` returned `8`.
+- Local Playwright run against the deployed URL: **49/49 passing in 4.9s** (`PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e`). New suite at `apps/product/tests/reflection.spec.ts` (14 tests) plus the existing 35 tests across `landing`, `smoke`, `session-flow`, and `six-prompt-arc-verifier`.
+
+**Reviewer checklist (item-by-item against the 11 numbered DoD items in the task):**
+
+1. **Seventh screen between prompt 6 and the summary.** On `/session`, after entering names and walking through prompts 1-6, prompt 6's Next button reads "Reflect" (not "See summary"). Clicking it activates `#step-reflection` with `data-active="true"` while `#step-summary` remains `data-active="false"`. The reflection screen heading is `<h1>Anything to come back to?</h1>` and copy frames the screen as choosing what to revisit later, with "Skipping the lot is a feature" called out explicitly.
+   - Each row: shows the prompt index ("Prompt N of 6") and the verbatim prompt text; renders two `.reflection-tag` blocks (`data-side="a"` and `data-side="b"`); each tag block has a checkbox (`input[data-tag-input="a"]` / `input[data-tag-input="b"]`) labelled with the entered partner's name, defaulting unchecked; each tag block has a `.note-field` with a one-line `<input type="text" maxlength="160">` that is `hidden` until the matching checkbox is ticked.
+   - **Back** (`#reflection-back-btn`) returns to prompt 6 with all six prompt answers preserved AND all tag/note state preserved. Verified by typing answers on prompts 1-6, tagging prompts 3 and 5 (one with a note), pressing Back, walking through Back to prompt 1 then Next forward through to prompt 6, advancing through the reflection step again — every checkbox and note survives.
+   - **See summary** (`#reflection-next-btn`) advances to `#step-summary`.
+   - Advancing with zero tags and zero notes is allowed and goes straight to the summary.
+
+2. **Summary screen update.** When at least one prompt is tagged by either partner, `#revisit-section` (the "Worth coming back to" section) renders at the top of the summary, above `#summary-list`. Inside it: one `.revisit-item` per tagged prompt, in the original prompt order; the `.tagged-by` line names the partners who tagged it (e.g. "Tagged by **Alex**" or "Tagged by **Alex** and **Bea**"); any non-empty notes appear beneath as `.revisit-note` paragraphs prefixed by the author's name. When no prompts are tagged, `#revisit-section` is `hidden` (no empty section, no "(none)" placeholder asserted by the test). The existing six-prompt list below renders unchanged with skipped/answered behaviour intact. "Start a new session" clears tags and notes alongside answers — verified by tagging, restarting, walking back to the reflection screen and confirming all checkboxes are unchecked.
+
+3. **Print path.** `Save as PDF` (`#print-btn`) still calls `window.print()` (verified by stubbing print and asserting no navigation/network). Under `await page.emulateMedia({ media: "print" })` with at least one tag set: `#step-setup`, `#step-prompt`, `#step-reflection` are all hidden; `#step-summary` is visible; `#revisit-section` is visible at the top of the printed output (`y` ordinate strictly less than the first `.summary-prompt` block). Computed font-size of `.revisit-prompt` and the `Worth coming back to` `<h2>` is ≥ 11px under print, so the section is in the same legible weight as the rest of the summary, not microscopic. When no tags exist, `#revisit-section` stays hidden under print emulation, and the existing `.print-footer` advice line and chrome-hiding behaviour are unchanged.
+
+4. **Privacy posture preserved.** `curl -s .../session | grep -cE 'fetch\(|XMLHttpRequest|sendBeacon'` returns `0`. The full-flow no-network test in `reflection.spec.ts` walks a complete session (six prompts with sentinel answers + reflection with sentinel notes + summary + stubbed print click) and asserts zero non-GET requests recorded by `page.on("request")` AND that no recorded request URL or POST body contains any of the typed answer or note text. Tags and notes live only in `sessionStorage` under key `common-ground.session.v1` (the `tags` array is added to the same object — no new key, no new storage mechanism). Verified separately that `localStorage` and `document.cookie` references are still absent from the served `/session` source.
+
+5. **Six-prompt wording unchanged.** Verified by `tests/session-flow.spec.ts` (`walks through all six prompts in order with verbatim wording`) and `tests/six-prompt-arc-verifier.spec.ts` (`1. six prompts appear in the exact verbatim order via Next`). Both still pass against the deployed Worker. The reflection step references the existing six prompts (no new prompt seven). The wording referenced in the reflection rows is read from the same `prompts-data` JSON tag that drives the six-prompt arc.
+
+6. **British English.** All new copy is in British English: "Anything to come back to?", "Take a moment together", "later in the week", "Skipping the lot is a feature; the conversation does not need a homework list", "One-line note (optional)", "Worth coming back to", "The prompts each of you flagged to revisit later, in the order they came up", "Tags and notes stay on this device alongside your answers." `<html lang="en-GB">` confirmed on `/session`. README's new bullet 4 is also en-GB ("a moment together", "skip the reflection entirely"). Reflection.spec.ts asserts the rendered reflection step contains no Americanisms (`favorite`, `behavior`, `color`).
+
+7. **Mobile-readable at 375px.** `tests/reflection.spec.ts` (`reflection screen is mobile-readable at 375px width`) sets viewport to 375x800, walks to the reflection screen, asserts `main` bounding-box width ≤ 375 and `documentElement.scrollWidth ≤ clientWidth + 1` (no horizontal scroll). The two partner tag controls per row stack into a single column at narrow widths (the `.reflection-tags` grid is `grid-template-columns: 1fr` until `min-width: 36rem`). Toggling a checkbox under that viewport reveals the note field (verified in test).
+
+8. **Tests.** New suite at `apps/product/tests/reflection.spec.ts` (14 tests) covers each Reviewer-relevant behaviour:
+   - Tagging works for either partner; tags persist across Back/Next (`Back returns to prompt 6 with answers and tag state preserved`).
+   - Skipping the reflection entirely renders the summary as it did pre-reflection — no extra section, no `(none)` placeholder (`skipping the reflection entirely renders the summary with no extra section`).
+   - Tagged prompts appear in "Worth coming back to" with correct partner labels and notes (`tagged prompts appear in Worth coming back to with names and notes`, plus `revisit item with no notes still shows partner labels` for the no-note edge case).
+   - Print emulation shows "Worth coming back to" at the top of the printed output when tags exist (`print emulation shows Worth coming back to at the top when tags exist`); also a guard test that confirms the section stays hidden under print when no tags exist (`print emulation hides Worth coming back to when no tags exist`).
+   - Network watch through the full flow (six prompts + reflection + summary + print click) shows zero non-GET requests AND no answer/note sentinel ever appears in a request URL or body (`zero non-GET requests across full flow including print click`).
+   - Plus structural / privacy / mobile tests: `reflection screen sits between prompt 6 and the summary`, `each partner has their own tag toggle, labelled by their name`, `tagging reveals the note input for that partner only`, `Start a new session clears tags and notes too`, `served /session source still has no fetch/XHR/sendBeacon tokens`, `reflection screen is mobile-readable at 375px width`, `html lang is en-GB and copy uses British spelling`.
+   - All 49 tests across the four suites pass against `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev` in 4.9s.
+
+9. **README refresh.** `README.md` "How to use" updated with a new bullet 4 describing the closing reflection step ("Anything to come back to?" — each partner can tag any of the six prompts as worth revisiting later with an optional one-line note, or skip the reflection entirely). Existing bullets 1-3 unchanged; the previous bullet 4 (the summary + Save as PDF step) is now bullet 5 with text unchanged. Two sentences only, in British English, no bloat.
+
+10. **`pnpm --filter product run deploy` succeeded.** New version `336e69d9-32d4-4c7e-a42b-491377027be0` deployed to `https://rivals-team-beta-product.kevin-wilson.workers.dev`. `curl -sI /` and `/session` both returned 200 with `content-type: text/html; charset=utf-8`. Full Playwright suite ran against the deployed URL: 49 tests, all passing (4.9s).
+
+11. **This entry.** Commit SHA, deployed URL, and version ID are all listed at the top. Each numbered checklist item above maps directly to the corresponding numbered DoD item in `coordination/current-task.md`.
+
