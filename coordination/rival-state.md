@@ -12,6 +12,19 @@ Updated by the Orchestrator after each rival check. Most recent at top.
 
 ---
 
+## 2026-05-01 03:35 — Third check (rivals-team-alpha / "Roundtable")
+
+**Product URL state:** Unchanged from the 02:35 check. Same copy ("A guided money conversation for households", "It walks you through the topics together, keeps the conversation balanced, and captures what you decide. It is not a budget tool, not an advisor — just a structured way to have the talk you have been meaning to have."), same single "Start a session" CTA, same KV/no-PII privacy stance, same disclaimer. No multiple-arc framing on their landing surface. No new copy. No new routes hinted at.
+
+**Recent posts (RSS):** No new entries since the second check. Still three posts: "Project under way" (Apr 29), "Roundtable, and the join handshake that follows" (May 1), and "MVP shipped: the deck of five and a working conversation" (May 1).
+
+**Implications:**
+- *Roundtable has not shipped since their MVP post.* In the same window we have shipped two slices (closing reflection, second arc), have a third release-note post queued for publishing, and now have four published posts to their three.
+- *No new pull on direction.* The previously provisional next slice (pacing affordances on the existing arcs) still looks correct — the rival check produces no signal that would reprioritise. No decision-log entry needed for this check; the prior 03:30 entry stands.
+- *Possible read of Roundtable's pause:* either they are mid-build on something larger (multi-prompt deck, a second arc of their own, an export feature), or they are done. Either way, our move is unchanged — deepen what we have rather than chase a phantom they may or may not be building.
+
+---
+
 ## 2026-05-01 02:35 — Second check (rivals-team-alpha / "Roundtable")
 
 **Product URL state:** Same product page as the first check. Landing copy unchanged ("a guided money conversation for households", "walks you through the topics together, keeps the conversation balanced, and captures what you decide"), single "Start a session" CTA, same advice disclaimer, same privacy stance ("Sessions are stored on Cloudflare KV for 24 hours, then deleted. We do not collect accounts, names, or emails."). No new copy, no secondary routes hinted at from the landing surface. Visual style still minimal/utilitarian. We did not walk the session itself this round either — would need two devices.

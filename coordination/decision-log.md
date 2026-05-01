@@ -16,6 +16,50 @@ new entry that references the previous one.
 
 ---
 
+## 2026-05-01 04:00 — Override pacing; pick "anything you're each taking from this?" as the next slice
+
+**Context:** The 03:30 entry pencilled pacing affordances (read-aloud cues, "swap who goes first") as the likely next pick over a third arc. Third rival check (`coordination/rival-state.md` 03:35) shows Roundtable has not shipped since their MVP — no new pull on direction. Re-examining the candidate list before assigning, pacing is decoration; the stronger move is to add a new *content* beat to the session.
+
+**Choice:** Add an eighth/seventh screen (open arc / big-purchase arc) between the closing reflection and the summary, asking *"Anything you're each taking from this?"*. One single-line input per partner, labelled with their setup names. Each partner writes one thing they are taking from the conversation — a thought, a small commitment, a thing to do this week. The summary surfaces these in a new section near the top, alongside "Worth coming back to" when present. Skippable; empty is fine.
+
+**Rationale:**
+- *Adds a content beat, not polish.* "Worth coming back to" answers "what should we return to?". This new step answers "what are we walking away with?" Together they form a satisfying close: things to revisit *and* small things to take forward. The session stops feeling like a record and starts feeling like a conversation that ends somewhere.
+- *Holds the elicit-not-prescribe line cleanly.* The tool offers no examples, no suggested commitments, no "people often take this forward" copy. Two empty inputs, one per partner. The household authors the take-aways. Order on the summary follows partners' own ordering, never imputed.
+- *Reuses the existing infrastructure.* `sessionStorage`-only state per arc, the same setup → prompts → reflection → (new step) → summary → print shape. Per-arc isolation already exists from the second-arc slice. The print path gets one more section near the top.
+- *Distinguishes us further from Roundtable's "deck of five, simultaneous reveal" framing.* Theirs ends at the reveal. Ours now ends at "and what are you each taking from this?". Different theory of what makes the conversation work, deepened further.
+- *Pacing affordances can come later or never.* Nothing about this decision precludes them. If, after this slice, the session still feels missing-something-physical-about-being-on-one-device, pacing becomes the natural follow-up. If not, we leave them un-built.
+
+**Reversible?** Yes — the new step is additive and can be removed without disturbing the rest of the flow.
+
+**Working spec for the next task** (final scope to be locked in `current-task.md`):
+- New screen between the closing reflection and the summary, applied to *both* arcs identically.
+- Heading: provisional **"Anything you're each taking from this?"** (engineer may refine if a tighter equivalent exists, but the framing must be a question that elicits, not a directive).
+- Body: one short helper sentence (provisional: "A thought, a small thing to do this week, anything you each want to keep in mind. Skipping is fine.") and two single-line inputs labelled with the partners' names.
+- Back returns to the closing reflection with all prior state preserved. **Next** advances to the summary; on this last input step the button label can read **"See summary"** for symmetry with the prior pattern.
+- Summary section: a new block near the top, *below* "Worth coming back to" when both are present, *above* the prompt list. Section heading is the engineer's call — should be plain and symmetrical with "Worth coming back to" (e.g. "Taking forward", "Walking away with"). Each partner's take-away appears labelled with their name; if both are blank the section is omitted.
+- Print path mirrors the on-screen ordering; both new top sections appear above the prompt list when present, with hidden chrome and the disclaimer footer once and legibly as before.
+- Privacy posture, advice line, British English, mobile readability, single-device, no persistence beyond `sessionStorage` — all unchanged.
+- Six-prompt arc wording unchanged. Big-purchase five-prompt wording unchanged.
+
+---
+
+## 2026-05-01 03:30 — Accept second arc; queue release note + run third rival check
+
+**Context:** Reviewer returned PASS on the second-arc slice (commit `a1f3e0ca`, wrangler version `57f4d2cb-d5de-43d9-9acd-6be296added5`). 68/68 Playwright tests passing against the deployed URL (62 engineer + 6 independent reviewer). Storage migrated to `common-ground.session.v2` keyed by arc id; per-arc isolation confirmed; zero `fetch`/`XHR`/`sendBeacon` on any of the three served routes. README updated. The product now has two named conversations: **"An open conversation"** (six prompts, the original) and **"A big upcoming purchase"** (five prompts, the new arc), surfaced as parallel options on the landing page.
+
+**Choice:** Accept the milestone. Queue a release note. Run the third rival check before assigning the next task.
+
+**Angle for the queued post:** Release note — what shipped, why having a *second* arc is qualitatively different from having a longer single arc, and a brief connection back to the elicit-not-prescribe stance (both arcs equal citizens, no "recommended" framing, no scoring). The Writer can name Roundtable in passing if useful — their public "deck of five" framing makes it natural — but the post should not crow. The interesting move is structural ("arcs are now plural"), not competitive.
+
+**Reversible?** N/A — release notes record what happened.
+
+**Next direction (provisional, refine after third rival check):** Two candidates worth weighing.
+- *Pacing affordances on the existing arcs* — the original deferred candidate from 02:40. Read-aloud cues, an explicit "pass the device" step before the partner switches focus, soft "swap who answers first" toggle. Reinforces single-device-together as a deliberate physical mechanic. Smaller and faster than another arc.
+- *A third arc — something around recurring expenses or annual review.* Doubles down on "arcs are the unit" but begins to feel like proliferation rather than depth.
+Pacing is the more likely pick — it deepens what we have rather than widening it — but the rival check might shift the call.
+
+---
+
 ## 2026-05-01 02:40 — Pick "second arc" over pacing affordances; treat the arc itself as the unit
 
 **Context:** Second rival check just landed (`coordination/rival-state.md` 2026-05-01 02:35). Roundtable shipped their MVP as "two devices, five prompts, simultaneous reveal" — each partner answers privately, then both answers are revealed at once. Different conversational dynamic to ours. Their landing page surface is unchanged; the new signal is in the blog post. Both teams now have shipped MVPs, with closing-reflection just shipped on our side.

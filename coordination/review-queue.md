@@ -386,3 +386,59 @@ Closing reflection step shipped. The seventh screen between prompt 6 and the sum
 
 16. **This entry.** Commit SHA, deployed URL, version ID, and the 16-item Reviewer checklist mapping each DoD item are all present above.
 
+**Reviewer verdict:** PASS — independently verified against the deployed URL on 2026-05-01.
+
+Independent verification suite added at `apps/product/tests/second-arc-verifier.spec.ts` (6 tests). Combined with the engineer's existing tests, the full product suite runs **68/68 passing in 6.4s** against `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev`.
+
+Independent evidence (Reviewer):
+
+- **Routes / deploy reachable (DoD 15).** `curl -sI` returned `HTTP/2 200` with `content-type: text/html; charset=utf-8` for `/`, `/session?arc=open`, and `/session?arc=purchase`. Wrangler version `57f4d2cb-d5de-43d9-9acd-6be296added5` taken at face value from the engineer's deploy log; deployed body is consistent with that version (arc selector, both arc names, v2 storage key, print heading variants all present in served HTML).
+
+- **Two named arcs (DoD 1).** `/` served HTML contains exactly one occurrence each of "An open conversation" and "A big upcoming purchase". `<html lang="en-GB">` confirmed on all three routes. Arc names threaded through:
+  - Landing — two `.arc-choice` cards visible, each with a `Start an…` CTA linking to its arc URL.
+  - Setup screen — `#step-setup` body on `/session?arc=purchase` includes "A big upcoming purchase".
+  - Header arc tag — `data-arc="purchase"` / `data-arc="open"` (3 textual occurrences in served HTML).
+  - Prompt header — `tests/second-arc-verifier.spec.ts:1` walks both arcs end-to-end; on each prompt N, `#progress-text` contains both `Prompt N of <TOTAL>` and the active arc name. Confirms format matches the spec ("Prompt 3 of 5 — A big upcoming purchase").
+  - Summary heading — served HTML contains both `Your big-purchase conversation` (purchase route) and `Your open conversation` (open route).
+  - Print heading — served HTML contains `A household money conversation — A big upcoming purchase` (purchase route only).
+
+- **Five purchase prompts verbatim (DoD 2).** `tests/arcs.spec.ts:walks the big-purchase arc — five verbatim prompts in order, named summary` walks all five and asserts each `#prompt-text` matches the brief character-for-character. I additionally re-grep'd the served HTML for each of the five literal strings — all present, including the en-dashes in prompts 3 and 5 and the "didn't" curly apostrophe.
+
+- **Arc selection (DoD 3).** Both `.arc-choice` cards present on `/`; CSS `.arc-choices` is `grid-template-columns: 1fr 1fr` at ≥36rem and `1fr` below — equal-citizen layout, neither buried in a secondary link. Arc-name communication through the rest of the flow is asserted in DoD 1.
+
+- **Flow reuse (DoD 4).** Same screen IDs (`#step-setup`, `#step-prompt`, `#step-reflection`, `#step-summary`) and buttons (`#begin-btn`, `#back-btn`, `#next-btn`, `#reflection-back-btn`, `#reflection-next-btn`, `#print-btn`, `#restart-link`) drive both arcs — verified in `tests/arcs.spec.ts` and my own walk through both arcs in `tests/second-arc-verifier.spec.ts:1`. Only the `#prompts-data` payload differs.
+
+- **Per-arc state isolation in `sessionStorage` (DoD 5).** `tests/second-arc-verifier.spec.ts:2 sessionStorage uses v2 root keyed by arc id` does the following via `page.evaluate(() => sessionStorage.getItem(...))`:
+  - Starts the purchase arc, fills `PURCHASE-A` / `PURCHASE-B` names and an answer marker `PURCHASE-ANSWER-A1`. The `common-ground.session.v2` raw value parses to `{ purchase: {…} }` containing `PURCHASE-ANSWER-A1`.
+  - Returns to `/`, clicks the open-arc CTA. Both `#name-a` and `#name-b` are empty in the open arc (asserts `toHaveValue("")`); first textarea is empty.
+  - Fills open-arc names and `OPEN-ANSWER-A1`. The raw `v2` value now contains both `parsedRoot.open` (with the open marker but NOT the purchase marker) and `parsedRoot.purchase` (with the purchase marker but NOT the open marker). Per-arc isolation confirmed at the storage level, not just at the UI level.
+  - Storage key migration from `v1` to `v2` confirmed by `grep -oE 'common-ground\.session\.v[0-9]+' /tmp/session-purchase.html | sort -u` returning only `common-ground.session.v2`.
+
+- **Reflection step references chosen arc (DoD 6).** `tests/second-arc-verifier.spec.ts:3 Reflection step on purchase has 5 rows; on open has 6 rows` walks each arc to its reflection screen and asserts `#reflection-list .reflection-row` count is 5 on purchase and 6 on open. Additionally asserts the `#step-reflection` text on the purchase arc does NOT contain any of the six open-arc prompts (no leakage).
+
+- **Summary and print (DoD 7).** `tests/second-arc-verifier.spec.ts:4 Print emulation: heading names the arc on screen and in print` walks the purchase arc to its summary, confirms `#summary-heading` contains "big-purchase", calls `page.emulateMedia({ media: "print" })`, and asserts `.print-only` is visible AND its text contains "A big upcoming purchase". `tests/arcs.spec.ts:Worth coming back to and print emulation work on the big-purchase arc` already covers ordering (revisit ordinate < first summary block ordinate) and tagged-prompt-only inclusion under print.
+
+- **Privacy posture (DoD 8).** `curl -s | grep -cE 'fetch\(|XMLHttpRequest|sendBeacon'` returned `0` for `/`, `/session?arc=open`, and `/session?arc=purchase`. `curl -s | grep -cE 'localStorage|document\.cookie'` against `/session?arc=purchase` returned `0` — only `sessionStorage` references appear. `tests/second-arc-verifier.spec.ts:6 Network watch through both arcs end-to-end including print` walked open (six prompts) then purchase (five prompts), each with sentinel answers (`OPEN-SENT-0..5`, `PURCH-SENT-0..4`), stubbed `window.print` to a no-op, clicked `#print-btn` on each summary. Recorded zero non-GET requests across both flows; asserted no recorded request URL or POST body contains any sentinel from either arc. The only persistence is `sessionStorage` under `common-ground.session.v2`.
+
+- **No advice, no scoring, no ranking (DoD 9).** `grep -ciE 'recommend|popular|best for|good for beginners|most chosen|default|featured'` against `/tmp/landing.html` returned `0`. The two arc cards differ only in arc-specific copy (name, prompt count, blurb); no badging.
+
+- **British English (DoD 10).** `<html lang="en-GB">` confirmed on `/`, `/session?arc=open`, `/session?arc=purchase`. New copy uses British phrasing; `tests/arcs.spec.ts:html lang is en-GB on /session?arc=purchase and copy uses British spelling` asserts no `favorite`/`behavior` Americanisms.
+
+- **Mobile readability at 375px (DoD 11).** `tests/second-arc-verifier.spec.ts:5 Landing at 375px stacks arc cards, no horizontal scroll` asserts `documentElement.scrollWidth ≤ clientWidth + 1` at 375×800 on `/`, with two `.arc-choice` cards present (stacked into a single column). `tests/arcs.spec.ts:big-purchase arc is mobile-readable at 375px` covers the purchase summary at 375px.
+
+- **Six-prompt arc wording unchanged (DoD 12).** `tests/session-flow.spec.ts:walks through all six prompts in order with verbatim wording`, `tests/six-prompt-arc-verifier.spec.ts:1 six prompts appear in the exact verbatim order via Next`, and `tests/arcs.spec.ts:regression — open arc still walks all six prompts in order` all still pass against the deployed URL. Independent grep on `/tmp/session-open.html` confirmed each of the six prompt strings is present verbatim (curly apostrophes and en-dashes intact).
+
+- **Test coverage (DoD 13).** All seven sub-items in the queue checklist are covered by the engineer's `tests/arcs.spec.ts` (13 tests). Reviewer ran the full deployed-URL suite end-to-end: **68/68 passing in 6.4s** (62 engineer + 6 new reviewer tests). Suites: `arcs`, `landing`, `reflection`, `second-arc-verifier`, `session-flow`, `six-prompt-arc-verifier`, `smoke`.
+
+- **README (DoD 14).** `README.md` "How to use" lines 31–60 list both arcs with one-line summaries, mention per-arc isolation ("switching between them from the landing page does not mix the two"), and generalise the chosen-arc flow through reflection → summary → Save as PDF. British English throughout. No bloat.
+
+- **Queue checklist (DoD 16).** The 16 numbered items above map cleanly to the 16 numbered DoD items in `coordination/current-task.md`.
+
+Notes (non-blocking):
+
+- Engineer's restart-clear pattern (`clearState()` then `show("setup")` re-creating the arc sub-key with empty answers/tags/notes) is the same cosmetic artefact flagged on previous slices. No answer/tag/note text persists across restart, so it is not a defect.
+- Pre-existing ESLint warning in `tests/six-prompt-arc-verifier.spec.ts:344` (unused `@typescript-eslint/no-explicit-any` directive) was not introduced by this slice and does not fail the build.
+- The `common-ground.session.v1` key from prior slices is no longer written; a returning visitor's pre-existing v1 sessionStorage value is simply ignored (not migrated). No observable user impact since `sessionStorage` is per-tab and the v1 key was never long-lived.
+
+Second arc shipped. Two parallel arcs ("An open conversation", "A big upcoming purchase") on the landing, five Orchestrator-locked verbatim prompts in the new arc, full setup → prompts → reflection → summary → print flow per arc, per-arc state isolation in `sessionStorage` under `common-ground.session.v2`, six-prompt arc wording unchanged, zero non-GET requests across both end-to-end flows including print clicks, en-GB copy, mobile readability preserved, README updated, all verified independently against the deployed URL. PASS.
+

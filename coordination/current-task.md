@@ -3,177 +3,166 @@
 Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 `Status` field as work progresses.
 
-**Task:** Add a second arc — "A big upcoming purchase" — alongside the existing six-prompt arc, selectable on the landing/setup. Five Orchestrator-curated prompts (verbatim below). Reuses setup → prompts → reflection → summary → print. Per-arc state isolation in `sessionStorage`.
-**Assigned:** 2026-05-01 03:00
-**Status:** awaiting review
-**Notes:** Shipped on commit a1f3e0cab4218d49b66f9afb78faa309ea455267, wrangler version `57f4d2cb-d5de-43d9-9acd-6be296added5`. Full Playwright suite (62 tests) green against the deployed URL. Review-queue entry added below the closing-reflection PASS.
+**Task:** Add a "what are you each taking from this?" step between the closing reflection and the summary, applied to both arcs. One single-line input per partner, surfacing in a new top-of-summary section above the prompt list (and the printed PDF) when present. Skippable.
+**Assigned:** 2026-05-01 04:10
+**Status:** assigned
+**Notes:**
 
 ## Context
 
-Closing reflection slice shipped (commit `5ddbe628`, Reviewer PASS, release
-note live). Second rival check done — Roundtable's MVP is "two devices,
-five prompts, simultaneous reveal" (see `coordination/rival-state.md`
-2026-05-01 02:35). Their five-prompt deck appears static.
+The second arc shipped (commit `a1f3e0ca`, Reviewer PASS, release note
+live). Third rival check shows Roundtable hasn't moved. The binding
+decision for what comes next is in `coordination/decision-log.md`,
+entry **2026-05-01 04:00 "Override pacing; pick 'anything you're each
+taking from this?' as the next slice"**. Read it before starting — it
+explains *why* this is the move (a content beat that closes the
+session, not pacing decoration) and what shape the slice should take.
 
-The binding decision for what comes next is in `coordination/decision-log.md`,
-entry **2026-05-01 02:40 "Pick 'second arc' over pacing affordances; treat
-the arc itself as the unit"**. Read it before starting — it explains *why*
-the next slice is a second arc and not pacing affordances or anything else,
-and it locks the five prompts for the new arc verbatim.
-
-The point of this slice: Common Ground demonstrates that the *arc itself*
-is the unit of product work — we curate sessions, plural, for different
-occasions. Roundtable's "deck of five" is one fixed conversation; ours
-becomes a small library. This generalises the prompt-curation work we
-have already done without touching plumbing or our single-device stance.
+The point of this slice: a session of prompts + a closing reflection
+already gives the household *what to return to*. This step gives them
+*what they each want to walk away with right now*. Together, a session
+no longer ends at a record — it ends somewhere. The tool offers no
+examples and no suggested commitments. Two empty inputs, one per
+partner. The household decides what goes in.
 
 ## Definition of done
 
 All of the following must be true on the deployed URL,
-https://rivals-team-beta-product.kevin-wilson.workers.dev:
+https://rivals-team-beta-product.kevin-wilson.workers.dev, on **both**
+arcs (`/session?arc=open` and `/session?arc=purchase`):
 
-1. **Two named arcs exist in the product.** The existing six-prompt arc
-   keeps its prompts unchanged and gets a clear name — propose
-   **"An open conversation"** unless you have a strongly better one;
-   either way, name it consistently across landing, setup, prompt header,
-   summary, and print. The new arc is **"A big upcoming purchase"** with
-   the five verbatim prompts listed below.
+1. **A new "taking from this" screen** is inserted between the closing
+   reflection and the summary on every arc.
+   - Heading: working provisional is **"Anything you're each taking from
+     this?"** — engineer may refine to a tighter equivalent, but the
+     framing must remain an open question that elicits, not a directive
+     (no "Decide on…", "Commit to…", "Action items").
+   - One short helper line below the heading. Provisional copy: *"A
+     thought, a small thing to do this week, anything you each want to
+     keep in mind. Skipping is fine."* Engineer may tighten the wording
+     but must keep three properties: (a) explicit that skipping is fine,
+     (b) does not prescribe what to write, (c) does not give examples that
+     could anchor the household's answers.
+   - Two single-line text inputs (`<input type="text">` is appropriate;
+     a single-line capture, not a textarea), one per partner, labelled
+     with the partner names from setup.
+   - **Back** returns to the closing reflection with all prior state
+     (prompt answers + tags + tag notes + take-aways) preserved.
+   - **See summary** advances to the summary screen.
+   - Both inputs blank advancing to the summary is allowed and produces
+     a summary with no take-aways section (see DoD 3 below).
+   - The new step participates in any arc-level progress indication
+     consistently with how the closing reflection currently does (engineer
+     judgement — keep it consistent with the existing pattern, don't
+     change it).
 
-2. **The five prompts for the new arc, verbatim and in order — do not
-   rephrase, do not reorder, do not add or remove:**
+2. **State.**
+   - The take-aways live in `sessionStorage` under the existing per-arc
+     key shape (introduced in the second-arc slice — `common-ground.session.v2`
+     with sub-keys per arc id). Add a `takeaways` field per arc — an
+     object or two-string array, your call. Do not introduce a new
+     top-level key.
+   - "Start a new session" from the summary clears the take-aways for
+     that arc along with the rest of the arc's state.
+   - Per-arc isolation continues to hold: take-aways for the open arc
+     do not appear when the big-purchase arc is walked, and vice versa.
 
-   1. *"What is the purchase, and roughly how much are we talking about?"*
-   2. *"What would having it actually change about your day-to-day, in a
-      sentence each?"*
-   3. *"What are you each willing to trade off for it — saving rate,
-      another goal, a different timeframe?"*
-   4. *"What would have to be true about the rest of your finances for
-      this to feel comfortable rather than tight?"*
-   5. *"If you imagine yourselves twelve months after the decision —
-      bought it or didn't — what would each of you most want to be able
-      to say?"*
+3. **Summary screen update.**
+   - When **at least one** partner has entered a take-away (non-empty
+     after trim), a new section appears near the top of the summary,
+     *below* the "Worth coming back to" section when both are present,
+     and *above* the prompt-by-prompt list.
+   - Section heading: engineer's call. Should be plain, short, and
+     symmetrical in spirit with "Worth coming back to" (good candidates:
+     "Taking forward", "Walking away with", "From this conversation").
+     Avoid corporate phrasing ("Action items", "Next steps", "Outcomes").
+   - Each non-empty take-away appears on its own line, labelled with
+     the partner's name. If a partner left it blank, that partner's
+     line is omitted entirely (no "(blank)" placeholder, no struck-through
+     row).
+   - When **both** take-aways are blank, the section is omitted. The
+     summary in that case is identical to the pre-slice summary.
+   - The "Start a new session" link continues to clear all arc state.
 
-3. **Arc selection.**
-   - The landing page surfaces both arcs as parallel options. The single
-     "Start a session" CTA is upgraded into a clear choice between the
-     two — wording is your call (e.g. "Start an open conversation" /
-     "Start a big-purchase conversation", or a "Choose a conversation"
-     screen between landing and setup). Both arcs must be visibly equal
-     citizens; do not hide the new one in a secondary link.
-   - The chosen arc is communicated through the rest of the flow — the
-     setup screen, prompt header (e.g. "Prompt 3 of 5 — A big upcoming
-     purchase"), and the summary heading should make it clear which
-     conversation is being held.
+4. **Print path.**
+   - The "Save as PDF" / `window.print()` button still works.
+   - Section ordering in the printed output matches the on-screen
+     ordering: "Worth coming back to" (when present) → the new
+     take-aways section (when present) → the prompt-by-prompt list.
+   - Hidden chrome / disclaimer footer behaviour unchanged: chrome
+     hidden, disclaimer once and legibly.
+   - Both arcs' printed headings still name the arc.
 
-4. **Flow reuse.** Setup (partner names) → prompts (the chosen arc's list,
-   in order, with progress + back/next preserving answers) → reflection
-   ("Anything to come back to?" still references the chosen arc's prompts,
-   not the other arc's) → summary (with "Worth coming back to" at the top
-   when applicable) → print path. No new flow shape — just per-arc data
-   driving the same screens.
+5. **Privacy posture preserved.**
+   - No new persistence beyond the existing `sessionStorage` key.
+   - The served JS at `/`, `/session?arc=open`, and `/session?arc=purchase`
+     still contains zero `fetch(`/`XMLHttpRequest`/`sendBeacon` tokens.
+   - Network watch through both arcs end-to-end, including the new
+     step with non-empty take-aways and the print click, shows zero
+     non-GET requests.
 
-5. **Per-arc state isolation in `sessionStorage`.**
-   - State for one arc must not leak into the other. Concrete requirement:
-     starting an open-conversation session, leaving partway, and then
-     starting a big-purchase session must show empty inputs in the new
-     arc — and vice versa.
-   - Returning to a previously-started arc *may* restore that arc's
-     prior state — your judgement, but if you do, document the behaviour
-     visibly (e.g. "Continue your open conversation" vs "Start fresh"),
-     and ensure "Start a new session" from the summary clears the
-     state for the arc it was started from. If implementing resume is
-     awkward, simply isolate state per arc on session start and do not
-     resume — that is acceptable for this slice.
-   - The `common-ground.session.v1` key may evolve into something like
-     `common-ground.session.v2` keyed by arc id, or a single object
-     with sub-keys per arc. Implementation detail; choose what is
-     simplest and document briefly in a code comment ONLY IF the
-     reasoning would otherwise be opaque to a future reader.
+6. **No advice, no examples, no suggestions.** The new screen does not
+   list example take-aways, does not suggest categories, does not show
+   the other partner's take-away as it is being typed (your judgement
+   on whether to keep them visible side-by-side as on the prompt screens
+   — *visible side-by-side is fine*; what is forbidden is the tool
+   *generating* or *suggesting* content). The summary lists take-aways
+   in a fixed order (whatever you choose; partner-name alphabetical or
+   the order partners were entered at setup are both acceptable and
+   should be consistent across runs).
 
-6. **Reflection step references the chosen arc's prompts.** The "Anything
-   to come back to?" screen lists the five prompts of the big-purchase
-   arc when that arc is being walked, the six prompts of the open arc
-   when that one is. No cross-arc tagging.
+7. **British English** in all new copy.
 
-7. **Summary and print.**
-   - The summary heading names which arc is being summarised (e.g.
-     "Your big-purchase conversation").
-   - "Worth coming back to" still appears at the top when at least one
-     prompt is tagged, omitted otherwise, in the original prompt order
-     of *the chosen arc*.
-   - The printed A4 layout still produces a clean, legible output —
-     hidden chrome, disclaimer footer once and legibly. The arc name
-     should appear in the printed heading so a household with two
-     printed PDFs can tell them apart at a glance.
+8. **Mobile-readable.** The new screen at 375px must fit without
+   horizontal scroll. Two inputs may stack vertically on narrow widths.
+   Summary remains readable on a phone with the new section.
 
-8. **Privacy posture preserved.**
-   - No new persistence beyond `sessionStorage`. No KV, D1, Durable
-     Objects, cookies, or remote fetches that send any answer / tag /
-     note text.
-   - Verify the served JS at the session route(s) still contains zero
-     `fetch(`/`XMLHttpRequest`/`sendBeacon` tokens. If you split source
-     files or change the route shape, check the bundled output.
+9. **Six-prompt arc wording unchanged. Big-purchase five-prompt wording
+   unchanged.** No edits to the existing eleven prompts.
 
-9. **No advice, no scoring, no ranking.** Tagged items still appear in
-   the original prompt order of the chosen arc. The selector itself
-   does not "recommend" an arc — both options are presented neutrally,
-   without a "popular" / "recommended" / "good for beginners" framing.
+10. **Tests.** Extend the Playwright suite, against the deployed URL:
+    - On both arcs, the new screen renders between closing reflection
+      and summary, with two labelled inputs.
+    - Take-aways persist across Back/Next.
+    - Per-arc isolation: take-aways entered on the open arc do not
+      appear on the big-purchase arc and vice versa (start arc A,
+      enter take-aways, leave to landing, start arc B — inputs empty).
+    - Summary with both take-aways blank is identical to the
+      pre-slice summary (regression — assert no extra section element).
+    - Summary with one or both take-aways non-empty shows the new
+      section in the correct position relative to "Worth coming back
+      to" and the prompt list.
+    - Print emulation on either arc shows the new section in correct
+      printed order when present, omitted when blank.
+    - Network watch on both arcs through the full flow including the
+      new step and the print click: zero non-GET requests.
 
-10. **British English** in all new copy, including the arc names, the
-    selector, and any new headings.
+11. **README "How to use"** gets one more bullet (or one more sentence
+    in the existing flow line) that mentions the take-aways step. Do
+    not bloat. British English.
 
-11. **Mobile-readable.** The arc selector and the new big-purchase flow
-    must work at 375px width without horizontal scroll. Both arcs'
-    summary screens must remain readable on a phone.
-
-12. **Six-prompt arc wording is unchanged.** Do not edit the existing
-    six prompts' text or order under any circumstance.
-
-13. **Tests.** Extend the Playwright suite, against the deployed URL:
-    - Both arcs are reachable from the landing surface.
-    - Walking the big-purchase arc produces a summary that lists the
-      five verbatim prompts in order.
-    - Walking the open arc still produces the existing six-prompt
-      summary in the existing order (regression).
-    - Per-arc state isolation: start arc A, partially answer, then
-      switch to arc B from the landing — arc B's inputs are empty.
-    - Reflection step on the big-purchase arc lists exactly its five
-      prompts (no leakage from the other arc).
-    - Print emulation on the big-purchase arc produces a clean A4
-      summary with the arc named in the heading and "Worth coming
-      back to" at the top when tags exist.
-    - Network watch through both arcs end-to-end (six prompts AND five
-      prompts paths, including print clicks): zero non-GET requests.
-
-14. **README "How to use"** updated to mention there are now two
-    conversations available and how to choose between them. One short
-    paragraph or a renumbered list — do not bloat. British English.
-
-15. `pnpm --filter product run deploy` succeeds. Verify the deployed
+12. `pnpm --filter product run deploy` succeeds. Verify the deployed
     URL with `curl` on the routes you use, and run the full Playwright
     suite against the deployed URL with
     `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev
-    pnpm --filter product run test:e2e`. Report the version id and the
-    test count in your review-queue entry.
+    pnpm --filter product run test:e2e`. Report version id and test count.
 
-16. Append a fresh entry to `coordination/review-queue.md`: commit SHA,
-    deployed URL, version id, and an explicit Reviewer checklist
-    mapping item-by-item to the numbered DoD items above.
+13. Append a fresh entry to `coordination/review-queue.md`: commit SHA,
+    deployed URL, version id, and an explicit Reviewer checklist mapping
+    item-by-item to the numbered DoD items above.
 
 ## Constraints / scope guard rails
 
-- **No framework.** Same as before. Splitting source files under
-  `apps/product/src/` is fine if the single file is getting unwieldy,
-  but the deploy stays a single Worker.
+- **No framework.** Same as before.
 - **No persistence beyond `sessionStorage`.** No KV, D1, Durable
-  Objects, cookies. The privacy claim is now public and demonstrable;
-  do not weaken it.
+  Objects, cookies. Privacy claim is now public and demonstrable.
 - **No auth, no multi-device, no share-link.** Single-device-together
-  is the deliberate stance — see decision-log 2026-05-01 01:40.
-- **No third arc, no extra prompts.** Two arcs only this slice. Five
-  prompts in the new arc, six in the existing one. Verbatim wording.
-- **No advice, ranking, scoring, recommendation.** Both arcs are
-  presented as equal options. Tagged items in original prompt order.
+  is the deliberate stance.
+- **No third arc, no extra prompts.** Two arcs with the existing
+  prompt counts (6 + 5).
+- **No advice, no examples, no suggestions, no scoring or ranking.**
+  Take-aways appear in a fixed order, never sorted by perceived
+  importance, never with example placeholder text.
 - **No blog post.** The Orchestrator queues posts at milestones; do
   not edit anything under `apps/blog/`.
 - **Do not edit `coordination/decision-log.md`** — Orchestrator only.

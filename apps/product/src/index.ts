@@ -5,8 +5,8 @@
 //   GET /session                → defaults to the open arc
 // State lives entirely in the browser (sessionStorage) under the key
 // `common-ground.session.v2`, an object keyed by arc id so each arc has its
-// own answers/tags/notes — no leakage between arcs. There is no other
-// server-side route. No fetches carry answer text.
+// own answers/tags/notes/takeaways — no leakage between arcs. There is no
+// other server-side route. No fetches carry answer text.
 
 type ArcId = "open" | "purchase";
 
@@ -541,6 +541,62 @@ const sharedStyles = `
     font-size: 0.9rem;
     color: var(--muted);
   }
+  .takeaways-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    margin: 0 0 1rem;
+  }
+  @media (min-width: 36rem) {
+    .takeaways-form {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .takeaways-section {
+    margin: 0 0 2rem;
+    padding: 1rem 1.1rem 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: 0.5rem;
+    background: var(--field-bg);
+  }
+  .takeaways-section h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .takeaways-section p.section-lede {
+    margin: 0 0 1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .takeaway-item {
+    margin: 0 0 0.7rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .takeaway-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  .takeaway-item .takeaway-by {
+    display: inline-block;
+    margin-right: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .takeaway-item .takeaway-by strong {
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .takeaway-item .takeaway-text {
+    margin: 0.25rem 0 0;
+    font-size: 1rem;
+    color: var(--fg);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .step {
     display: none;
   }
@@ -589,7 +645,8 @@ const sharedStyles = `
     /* Hide everything except the summary screen. */
     #step-setup,
     #step-prompt,
-    #step-reflection {
+    #step-reflection,
+    #step-takeaways {
       display: none !important;
     }
     /* Hide interactive chrome inside the summary screen. */
@@ -658,6 +715,37 @@ const sharedStyles = `
     }
     .revisit-item .tagged-by,
     .revisit-item .revisit-note .note-by {
+      color: #444444;
+      font-size: 10pt;
+    }
+    .takeaways-section {
+      border: 1px solid #999999;
+      background: #ffffff;
+      margin: 0 0 1.25rem;
+      padding: 0.65rem 0.85rem 0.85rem;
+      page-break-inside: avoid;
+    }
+    .takeaways-section h2 {
+      color: #000000;
+      font-size: 11pt;
+      margin: 0 0 0.35rem;
+    }
+    .takeaways-section p.section-lede {
+      color: #444444;
+      font-size: 9.5pt;
+      margin: 0 0 0.6rem;
+    }
+    .takeaway-item {
+      border-bottom: 1px solid #999999;
+      page-break-inside: avoid;
+    }
+    .takeaway-item .takeaway-text {
+      color: #000000;
+      font-size: 11pt;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+    }
+    .takeaway-item .takeaway-by {
       color: #444444;
       font-size: 10pt;
     }
@@ -788,6 +876,7 @@ const sessionScript = `
       setup: document.getElementById("step-setup"),
       prompt: document.getElementById("step-prompt"),
       reflection: document.getElementById("step-reflection"),
+      takeaways: document.getElementById("step-takeaways"),
       summary: document.getElementById("step-summary")
     };
     var nameAEl = document.getElementById("name-a");
@@ -805,6 +894,14 @@ const sessionScript = `
     var reflectionListEl = document.getElementById("reflection-list");
     var reflectionBackBtn = document.getElementById("reflection-back-btn");
     var reflectionNextBtn = document.getElementById("reflection-next-btn");
+    var takeawayAEl = document.getElementById("takeaway-a");
+    var takeawayBEl = document.getElementById("takeaway-b");
+    var takeawayLabelAEl = document.getElementById("takeaway-label-a");
+    var takeawayLabelBEl = document.getElementById("takeaway-label-b");
+    var takeawayBackBtn = document.getElementById("takeaway-back-btn");
+    var takeawayNextBtn = document.getElementById("takeaway-next-btn");
+    var takeawaysSectionEl = document.getElementById("takeaways-section");
+    var takeawaysListEl = document.getElementById("takeaways-list");
     var restartLink = document.getElementById("restart-link");
     var printBtn = document.getElementById("print-btn");
     var summaryListEl = document.getElementById("summary-list");
@@ -823,6 +920,9 @@ const sessionScript = `
     var promptIndex = 0;
     var answers = [];
     var tags = [];
+    // Per-arc take-aways: one short string per partner. Both blank means the
+    // summary omits the take-aways section entirely.
+    var takeaways = { a: "", b: "" };
     function emptyArcSlots() {
       var newAnswers = [];
       var newTags = [];
@@ -833,11 +933,12 @@ const sessionScript = `
           b: { tagged: false, note: "" }
         });
       }
-      return { answers: newAnswers, tags: newTags };
+      return { answers: newAnswers, tags: newTags, takeaways: { a: "", b: "" } };
     }
     var initial = emptyArcSlots();
     answers = initial.answers;
     tags = initial.tags;
+    takeaways = initial.takeaways;
 
     function readRoot() {
       try {
@@ -868,6 +969,7 @@ const sessionScript = `
         nameB: nameBEl.value || "",
         answers: answers,
         tags: tags,
+        takeaways: { a: takeaways.a || "", b: takeaways.b || "" },
         resolvedNames: currentNames()
       };
       try {
@@ -958,6 +1060,12 @@ const sessionScript = `
       if (typeof state.promptIndex === "number" && state.promptIndex >= 0 && state.promptIndex < TOTAL) {
         promptIndex = state.promptIndex;
       }
+      if (state.takeaways && typeof state.takeaways === "object") {
+        takeaways = {
+          a: typeof state.takeaways.a === "string" ? state.takeaways.a : "",
+          b: typeof state.takeaways.b === "string" ? state.takeaways.b : ""
+        };
+      }
       // Default to setup on reload — restarting the page should not skip ahead.
     }
 
@@ -965,6 +1073,21 @@ const sessionScript = `
       var names = currentNames();
       labelAEl.textContent = names.a + "'s answer";
       labelBEl.textContent = names.b + "'s answer";
+      if (takeawayLabelAEl) {
+        takeawayLabelAEl.textContent = names.a;
+      }
+      if (takeawayLabelBEl) {
+        takeawayLabelBEl.textContent = names.b;
+      }
+    }
+
+    function rehydrateTakeawayInputs() {
+      if (takeawayAEl) {
+        takeawayAEl.value = takeaways.a || "";
+      }
+      if (takeawayBEl) {
+        takeawayBEl.value = takeaways.b || "";
+      }
     }
 
     function captureCurrentAnswers() {
@@ -1181,6 +1304,37 @@ const sessionScript = `
       }
     }
 
+    function renderTakeaways() {
+      if (!takeawaysSectionEl || !takeawaysListEl) {
+        return;
+      }
+      var names = currentNames();
+      var aText = (takeaways.a || "").trim();
+      var bText = (takeaways.b || "").trim();
+      if (aText === "" && bText === "") {
+        takeawaysListEl.innerHTML = "";
+        takeawaysSectionEl.setAttribute("hidden", "");
+        return;
+      }
+      var html = "";
+      // Fixed order: partner A first, partner B second — the order they were
+      // entered at setup. Stable across runs.
+      if (aText !== "") {
+        html += '<div class="takeaway-item" data-side="a">' +
+          '<span class="takeaway-by"><strong>' + escapeHtml(names.a) + '</strong></span>' +
+          '<p class="takeaway-text">' + escapeHtml(aText) + '</p>' +
+        '</div>';
+      }
+      if (bText !== "") {
+        html += '<div class="takeaway-item" data-side="b">' +
+          '<span class="takeaway-by"><strong>' + escapeHtml(names.b) + '</strong></span>' +
+          '<p class="takeaway-text">' + escapeHtml(bText) + '</p>' +
+        '</div>';
+      }
+      takeawaysListEl.innerHTML = html;
+      takeawaysSectionEl.removeAttribute("hidden");
+    }
+
     function renderSummary() {
       var names = currentNames();
       var dateText = formatToday();
@@ -1193,6 +1347,7 @@ const sessionScript = `
         printDateEl.textContent = dateText;
       }
       renderRevisit();
+      renderTakeaways();
       var html = "";
       for (var i = 0; i < TOTAL; i++) {
         var entry = answers[i] || { a: "", b: "" };
@@ -1277,10 +1432,17 @@ const sessionScript = `
       var fresh = emptyArcSlots();
       answers = fresh.answers;
       tags = fresh.tags;
+      takeaways = fresh.takeaways;
       nameAEl.value = "";
       nameBEl.value = "";
       answerAEl.value = "";
       answerBEl.value = "";
+      if (takeawayAEl) {
+        takeawayAEl.value = "";
+      }
+      if (takeawayBEl) {
+        takeawayBEl.value = "";
+      }
       updateLabelsFromNames();
       show("setup");
     });
@@ -1311,6 +1473,49 @@ const sessionScript = `
     if (reflectionNextBtn) {
       reflectionNextBtn.addEventListener("click", function () {
         writeArcState();
+        rehydrateTakeawayInputs();
+        updateLabelsFromNames();
+        show("takeaways");
+      });
+    }
+
+    if (takeawayAEl) {
+      takeawayAEl.addEventListener("input", function () {
+        takeaways.a = takeawayAEl.value || "";
+        writeArcState();
+      });
+    }
+    if (takeawayBEl) {
+      takeawayBEl.addEventListener("input", function () {
+        takeaways.b = takeawayBEl.value || "";
+        writeArcState();
+      });
+    }
+
+    if (takeawayBackBtn) {
+      takeawayBackBtn.addEventListener("click", function () {
+        // Capture current input values before navigating away.
+        if (takeawayAEl) {
+          takeaways.a = takeawayAEl.value || "";
+        }
+        if (takeawayBEl) {
+          takeaways.b = takeawayBEl.value || "";
+        }
+        writeArcState();
+        renderReflection();
+        show("reflection");
+      });
+    }
+
+    if (takeawayNextBtn) {
+      takeawayNextBtn.addEventListener("click", function () {
+        if (takeawayAEl) {
+          takeaways.a = takeawayAEl.value || "";
+        }
+        if (takeawayBEl) {
+          takeaways.b = takeawayBEl.value || "";
+        }
+        writeArcState();
         renderSummary();
         show("summary");
       });
@@ -1326,6 +1531,7 @@ const sessionScript = `
     }
 
     rehydrate();
+    rehydrateTakeawayInputs();
     updateLabelsFromNames();
     show("setup");
   })();
@@ -1427,11 +1633,37 @@ function buildSessionHtml(arc: Arc): string {
         <div id="reflection-list"></div>
         <div class="nav-row">
           <button id="reflection-back-btn" class="secondary" type="button">Back</button>
-          <button id="reflection-next-btn" class="cta" type="button">See summary</button>
+          <button id="reflection-next-btn" class="cta" type="button">Next</button>
         </div>
         <p class="privacy-note">
           Tags and notes stay on this device alongside your answers. Nothing
           is sent anywhere.
+        </p>
+      </section>
+
+      <section id="step-takeaways" class="step" data-active="false" aria-labelledby="takeaways-heading">
+        <h1 id="takeaways-heading">Anything you're each taking from this?</h1>
+        <p class="reflection-intro">
+          A thought, a small thing to do this week, anything you each want
+          to keep in mind. Skipping is fine.
+        </p>
+        <div class="takeaways-form">
+          <div class="field">
+            <label for="takeaway-a"><span id="takeaway-label-a">You</span></label>
+            <input id="takeaway-a" type="text" autocomplete="off" maxlength="240" />
+          </div>
+          <div class="field">
+            <label for="takeaway-b"><span id="takeaway-label-b">Your partner</span></label>
+            <input id="takeaway-b" type="text" autocomplete="off" maxlength="240" />
+          </div>
+        </div>
+        <div class="nav-row">
+          <button id="takeaway-back-btn" class="secondary" type="button">Back</button>
+          <button id="takeaway-next-btn" class="cta" type="button">See summary</button>
+        </div>
+        <p class="privacy-note">
+          What you write here stays on this device alongside your answers.
+          Nothing is sent anywhere.
         </p>
       </section>
 
@@ -1463,6 +1695,13 @@ function buildSessionHtml(arc: Arc): string {
             they came up.
           </p>
           <div id="revisit-list"></div>
+        </section>
+        <section id="takeaways-section" class="takeaways-section" hidden aria-labelledby="takeaways-summary-heading">
+          <h2 id="takeaways-summary-heading">Taking forward</h2>
+          <p class="section-lede">
+            What each of you said you wanted to walk away with.
+          </p>
+          <div id="takeaways-list"></div>
         </section>
         <div id="summary-list"></div>
         <p class="privacy-note no-print">
