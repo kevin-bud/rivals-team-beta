@@ -202,6 +202,7 @@ test.describe("Common Ground closing reflection", () => {
     });
     // Click See summary with zero tags and zero notes.
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -245,6 +246,8 @@ test.describe("Common Ground closing reflection", () => {
       .fill("Pension review window");
 
     await page.locator("#reflection-next-btn").click();
+
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -300,6 +303,7 @@ test.describe("Common Ground closing reflection", () => {
     await row2.locator('input[data-tag-input="a"]').check();
     // No note typed — empty notes are allowed.
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     const item = page.locator("#revisit-section .revisit-item").first();
     await expect(item.locator(".tagged-by")).toContainText(NAME_A);
     // No revisit-note paragraph rendered when the note is empty.
@@ -312,6 +316,7 @@ test.describe("Common Ground closing reflection", () => {
     await row.locator('input[data-tag-input="a"]').check();
     await row.locator('input[data-note-input="a"]').fill("KEEP-NOT");
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#revisit-section")).toBeVisible();
     await page.locator("#restart-link").click();
     await expect(page.locator("#step-setup")).toHaveAttribute(
@@ -349,6 +354,7 @@ test.describe("Common Ground closing reflection", () => {
     await row.locator('input[data-tag-input="a"]').check();
     await row.locator('input[data-note-input="a"]').fill("Print-note alpha");
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -396,6 +402,7 @@ test.describe("Common Ground closing reflection", () => {
       answers: PROMPTS.map((_, i) => ({ a: `A${i}`, b: `B${i}` })),
     });
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await page.emulateMedia({ media: "print" });
     await expect(page.locator("#revisit-section")).toBeHidden();
     await expect(page.locator("#step-summary")).toBeVisible();
@@ -441,6 +448,7 @@ test.describe("Common Ground closing reflection", () => {
     await row3.locator('input[data-tag-input="b"]').check();
     await row3.locator('input[data-note-input="b"]').fill(noteSentinelB);
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     // Stub print and click the button.
     await page.evaluate(() => {
       window.print = () => {};

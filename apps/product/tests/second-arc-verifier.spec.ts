@@ -151,7 +151,8 @@ test.describe("Independent second-arc verifier", () => {
       await page.locator("textarea").first().fill(`a${i + 1}`);
     }
     await page.locator("#next-btn").click(); // to reflection
-    await page.locator("#reflection-next-btn").click(); // to summary
+    await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click(); // to summary
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -210,6 +211,7 @@ test.describe("Independent second-arc verifier", () => {
     }
     // Now on reflection; advance to summary
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await page.locator("#print-btn").click();
 
     // Purchase arc
@@ -227,6 +229,7 @@ test.describe("Independent second-arc verifier", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await page.locator("#print-btn").click();
 
     const nonGet = requests.filter((r) => r.method !== "GET");

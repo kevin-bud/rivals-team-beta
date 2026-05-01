@@ -61,6 +61,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
       "true",
     );
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -157,6 +158,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
       "true",
     );
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -236,6 +238,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
       "true",
     );
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -333,6 +336,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
 
     // Walk through the closing reflection step (no tags) to the summary.
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -412,6 +416,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -454,6 +459,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",

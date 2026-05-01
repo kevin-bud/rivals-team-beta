@@ -52,7 +52,12 @@ changes.)
    one-line note — or skip the reflection entirely. Tagged prompts then
    appear in a **Worth coming back to** section at the top of the
    summary.
-5. End on a shared summary of the chosen arc, headed with its name. Use
+5. Then a short **"Anything you're each taking from this?"** screen
+   gives each of you one line to capture whatever you want to walk away
+   with — a thought, a small thing to do this week, anything at all.
+   Skipping is fine; if you do write something, it appears in a
+   **Taking forward** section near the top of the summary.
+6. End on a shared summary of the chosen arc, headed with its name. Use
    **Save as PDF** to trigger your browser's print dialogue and choose
    "Save as PDF" as the destination — that's how you keep a copy.
    Skipped prompts stay in the summary marked *(skipped)* so you can see

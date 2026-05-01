@@ -153,6 +153,8 @@ test.describe("Common Ground arc selector + big-purchase arc", () => {
     }
 
     await page.locator("#reflection-next-btn").click();
+
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -197,6 +199,7 @@ test.describe("Common Ground arc selector + big-purchase arc", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -304,6 +307,7 @@ test.describe("Common Ground arc selector + big-purchase arc", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -319,6 +323,7 @@ test.describe("Common Ground arc selector + big-purchase arc", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -375,6 +380,7 @@ test.describe("Common Ground arc selector + big-purchase arc", () => {
       .locator('input[data-note-input="a"]')
       .fill("Talk over the day-to-day cost again");
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -455,6 +461,7 @@ test.describe("Common Ground arc selector + big-purchase arc", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await page.evaluate(() => {
       window.print = () => {};
     });
@@ -479,6 +486,7 @@ test.describe("Common Ground arc selector + big-purchase arc", () => {
     await row.locator('input[data-tag-input="a"]').check();
     await row.locator('input[data-note-input="a"]').fill(noteSentinel);
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await page.evaluate(() => {
       window.print = () => {};
     });
@@ -569,6 +577,7 @@ test.describe("Common Ground arc selector + big-purchase arc", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     const summaryOverflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,

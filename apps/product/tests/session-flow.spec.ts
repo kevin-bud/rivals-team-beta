@@ -109,6 +109,7 @@ test.describe("Common Ground session flow", () => {
     );
     // Advancing past the reflection step lands on the summary.
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -198,6 +199,7 @@ test.describe("Common Ground session flow", () => {
       "true",
     );
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -230,6 +232,7 @@ test.describe("Common Ground session flow", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -276,6 +279,7 @@ test.describe("Common Ground session flow", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -348,6 +352,7 @@ test.describe("Common Ground session flow", () => {
       "does not provide financial, tax, legal, or investment advice",
     );
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(footer).toBeVisible();
     await expect(footer).toContainText(
       "does not provide financial, tax, legal, or investment advice",
@@ -392,6 +397,7 @@ test.describe("Common Ground session flow", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await page.locator("#restart-link").click();
 
     expect(writeRequests, JSON.stringify(writeRequests, null, 2)).toEqual([]);
@@ -449,6 +455,7 @@ test.describe("Common Ground session flow", () => {
       await page.locator("#next-btn").click();
     }
     await page.locator("#reflection-next-btn").click();
+    await page.locator("#takeaway-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
