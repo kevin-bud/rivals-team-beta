@@ -3,67 +3,79 @@
 Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 `Status` field as work progresses.
 
-**Task:** Ship a real landing page and root README for the product, replacing the placeholder Worker.
-**Assigned:** 2026-05-01 00:00
-**Status:** awaiting review
+**Task:** Build a single-prompt end-to-end session flow — landing → name partners → one prompt (both answer) → summary.
+**Assigned:** 2026-05-01 00:30
+**Status:** in progress
 **Notes:**
-
-- Deployed at https://rivals-team-beta-product.kevin-wilson.workers.dev (commit 3bb7046).
-- Landing page verified live via `curl`; all required strings present.
-- Root `README.md` replaced with a product-facing version covering what/who/URL/how.
-- Review-queue entry appended; awaiting Reviewer verdict.
 
 ## Context
 
-This is the first task of the project. See the most recent entry in
-`coordination/decision-log.md` ("Initial reading of the brief") for product
-framing. The product is provisionally named **Common Ground** — a tool a
-household uses together to have a productive conversation about their joint
-finances.
+The landing page is shipped (PASS verdict on commit `3bb7046`). See the
+most recent decision-log entry, "Accept landing page; pick the session
+shape", for the binding decision: the MVP session is **single-device,
+synchronous, client-side state only**. No accounts, no server-side storage
+of answers. Two partners share one browser, answering side by side.
 
-Right now `apps/product/src/index.ts` is a placeholder Worker serving "coming
-soon". There is no root README. Both must change before we can ship anything
-that satisfies the MVP definition.
+This task is the first vertical slice through that flow. Keep it small.
+We are proving the interaction, not polishing it.
 
 ## Definition of done
 
-All of the following must be true:
+All of the following must be true on the deployed URL
+(https://rivals-team-beta-product.kevin-wilson.workers.dev), not just locally:
 
-1. `apps/product/src/index.ts` serves a real HTML landing page that includes:
-   - Product name: **Common Ground**
-   - A one-sentence value proposition framing what the product is for
-     (a household has a productive conversation about their joint
-     finances — together).
-   - A line making clear it is for two or more people in a household,
-     used together.
-   - A non-functional **"Start a session"** call to action (an anchor or
-     button is fine — wiring comes in the next task).
-   - A footer disclaimer: not financial, tax, legal, or investment advice.
-   - Reasonable, restrained styling (inline `<style>` is fine — no framework,
-     no build step changes). Mobile-readable. British English in copy.
-2. A new file `README.md` at the repo root (do not touch any other README)
-   covering: what the product is, who it is for, the public product URL
-   (placeholder note is acceptable until first deploy lands), and a one-line
-   "how to use" placeholder. British English. Keep it short — this will grow.
-3. `pnpm --filter product deploy` succeeds locally.
-4. The deployed public URL serves the new landing page (verify with
-   `curl` and report the URL in your review-queue entry).
-5. Append a fresh entry to `coordination/review-queue.md` with: the
-   commit SHA, the deployed URL, and what to verify (landing page loads,
-   contains the product name, value prop, multi-user framing, CTA, and
-   advice disclaimer).
-6. Commits are small and signed off normally — no signing, drop GPG if it
-   prompts.
+1. The "Start a session" CTA on the landing page is now functional and
+   navigates to a session route (`/session` or similar — your call).
+2. The session flow has three screens, in order:
+   - **Setup.** Asks for both partners' display names ("You" and "Your
+     partner" are acceptable defaults but they must be editable). A
+     "Begin" button advances to the prompt screen.
+   - **Prompt.** Shows one hardcoded prompt — pick a benign opener that
+     elicits, never prescribes. Suggested: *"What's one money decision
+     coming up in the next three months that affects both of you?"*
+     Both partners answer in two clearly labelled text areas on the same
+     page (their entered names should appear above each box). A "See
+     summary" button advances. Empty answers are allowed — do not block
+     progression.
+   - **Summary.** Shows the prompt and both partners' answers side by
+     side (or stacked on mobile), labelled with their names. Includes
+     a "Start a new session" link that returns to setup with state
+     cleared. Copy must remind the user the conversation is theirs —
+     no advice given, none stored on a server.
+3. State lives only in the page (in-memory or `sessionStorage`). **No
+   fetches that send answer text to the server.** Verify by inspecting
+   the deployed code path.
+4. The advice disclaimer remains visible in the footer on every screen.
+5. British English throughout. Mobile-readable. Single-column at
+   narrow widths.
+6. Update `apps/product/tests/smoke.spec.ts` — Reviewer flagged it as
+   stale (still asserts "coming soon"). Either retarget it to the new
+   landing page or delete it if `landing.spec.ts` covers the same
+   ground. Do not leave a failing or meaningless smoke test.
+7. `pnpm --filter product deploy` succeeds and the deployed URL serves
+   the new flow end-to-end. Verify with `curl` for the routes you add
+   and report what you ran.
+8. Append a new entry to `coordination/review-queue.md`: commit SHA,
+   deployed URL, an explicit checklist of what the Reviewer should
+   verify (each screen, the no-network-write claim, the disclaimer
+   on every screen, the smoke test status).
 
-## Out of scope (do not do in this task)
+## Constraints / scope guard rails
 
-- No persistence, auth, sessions, or routes beyond `/`.
-- No framework choice yet (keep it a single-file Worker).
-- No blog post — the Writer handles that; the Orchestrator queues it.
-- No Playwright tests yet — Reviewer will do a smoke check.
+- **No framework.** Stay on the single-Worker pattern. If you need a
+  bit of client-side JS, inline it or ship a small static asset — your
+  judgement, but do not introduce React/Vue/Svelte/etc. for one screen.
+  We can revisit if the surface grows.
+- **No persistence.** Not KV, not D1, not Durable Objects, not cookies
+  carrying answers. `sessionStorage` is the upper bound.
+- **No auth.** No sign-up, no pairing.
+- **One prompt only.** Resist the urge to ship a list. The next task
+  expands it; this task proves the loop works.
+- **No blog post.** Writer is not invoked until the Orchestrator queues
+  a milestone.
 
 ## When done
 
 - Set `Status:` to `awaiting review`.
-- Stop. Do not start the next task. The Orchestrator picks it up after
+- Stop. Do not start anything else. The Orchestrator picks up after
   the Reviewer verdict.
