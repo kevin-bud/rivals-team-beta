@@ -74,7 +74,7 @@ test.describe("Common Ground closing reflection", () => {
     for (let i = 0; i < PROMPTS.length - 1; i++) {
       await page.locator("#next-btn").click();
     }
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 6 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 6 of 6");
     await expect(page.locator("#next-btn")).toHaveText("Reflect");
     await page.locator("#next-btn").click();
     // The reflection screen is now active, summary not yet.
@@ -154,7 +154,7 @@ test.describe("Common Ground closing reflection", () => {
       "data-active",
       "true",
     );
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 6 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 6 of 6");
     // Prompt 6 answers preserved.
     await expect(page.locator("#answer-a")).toHaveValue("A answer 5");
     await expect(page.locator("#answer-b")).toHaveValue("B answer 5");
@@ -162,7 +162,7 @@ test.describe("Common Ground closing reflection", () => {
     for (let i = 0; i < 5; i++) {
       await page.locator("#back-btn").click();
     }
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 1 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 1 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("A answer 0");
     await expect(page.locator("#answer-b")).toHaveValue("B answer 0");
     // Forward to reflection again.
@@ -332,7 +332,7 @@ test.describe("Common Ground closing reflection", () => {
     }
     // Stored state has no answer/tag content.
     const stored = await page.evaluate(() =>
-      sessionStorage.getItem("common-ground.session.v1"),
+      sessionStorage.getItem("common-ground.session.v2"),
     );
     if (stored !== null) {
       expect(stored).not.toContain("KEEP-NOT");

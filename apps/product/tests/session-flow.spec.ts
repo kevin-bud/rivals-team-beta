@@ -35,15 +35,19 @@ function isWriteRequest(request: Request): boolean {
 }
 
 test.describe("Common Ground session flow", () => {
-  test("landing CTA navigates to /session", async ({ page }) => {
+  test("landing 'open conversation' CTA navigates to /session?arc=open", async ({
+    page,
+  }) => {
     await page.goto("/");
-    const cta = page.getByRole("button", { name: /start a session/i });
+    const cta = page.getByRole("button", {
+      name: /start an open conversation/i,
+    });
     await expect(cta).toBeVisible();
-    await expect(cta).toHaveAttribute("href", "/session");
+    await expect(cta).toHaveAttribute("href", "/session?arc=open");
     const ariaDisabled = await cta.getAttribute("aria-disabled");
     expect(ariaDisabled).not.toBe("true");
     await cta.click();
-    await expect(page).toHaveURL(/\/session$/);
+    await expect(page).toHaveURL(/\/session\?arc=open$/);
   });
 
   test("setup is the default active step on /session", async ({ page }) => {
@@ -72,7 +76,7 @@ test.describe("Common Ground session flow", () => {
     await expect(prompt).toHaveAttribute("data-active", "true");
 
     for (let i = 0; i < PROMPTS.length; i++) {
-      await expect(page.locator("#progress-text")).toHaveText(
+      await expect(page.locator("#progress-text")).toContainText(
         `Prompt ${i + 1} of 6`,
       );
       await expect(page.locator("#prompt-text")).toHaveText(PROMPTS[i]);
@@ -125,25 +129,25 @@ test.describe("Common Ground session flow", () => {
     await page.locator("#next-btn").click();
 
     // Prompt 2.
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 2 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 2 of 6");
     await page.locator("#answer-a").fill("answer two A");
     await page.locator("#answer-b").fill("answer two B");
     await page.locator("#next-btn").click();
 
     // Prompt 3.
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 3 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 3 of 6");
     await page.locator("#answer-a").fill("answer three A");
     await page.locator("#answer-b").fill("answer three B");
 
     // Back to prompt 2 — both answers preserved.
     await page.locator("#back-btn").click();
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 2 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 2 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("answer two A");
     await expect(page.locator("#answer-b")).toHaveValue("answer two B");
 
     // Back again to prompt 1 — preserved.
     await page.locator("#back-btn").click();
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 1 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 1 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("answer one A");
     await expect(page.locator("#answer-b")).toHaveValue("answer one B");
     await expect(page.locator("#back-btn")).toBeHidden();
@@ -151,7 +155,7 @@ test.describe("Common Ground session flow", () => {
     // Forward through to prompt 3 — that prompt's answers also preserved.
     await page.locator("#next-btn").click();
     await page.locator("#next-btn").click();
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 3 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 3 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("answer three A");
     await expect(page.locator("#answer-b")).toHaveValue("answer three B");
   });
@@ -287,26 +291,30 @@ test.describe("Common Ground session flow", () => {
 
     // Begin again — answers should be empty on prompt 1.
     await page.locator("#begin-btn").click();
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 1 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 1 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("");
     await expect(page.locator("#answer-b")).toHaveValue("");
 
     // sessionStorage should not retain any answer text after restart.
+    type ArcEntry = {
+      answers?: Array<{ a?: string; b?: string }>;
+      nameA?: string;
+      nameB?: string;
+    };
     const stored = await page.evaluate(() =>
-      sessionStorage.getItem("common-ground.session.v1"),
+      sessionStorage.getItem("common-ground.session.v2"),
     );
     if (stored !== null) {
-      const parsed = JSON.parse(stored) as {
-        answers?: Array<{ a?: string; b?: string }>;
-        nameA?: string;
-        nameB?: string;
-      };
-      expect(parsed.nameA ?? "").toBe("");
-      expect(parsed.nameB ?? "").toBe("");
-      if (Array.isArray(parsed.answers)) {
-        for (const entry of parsed.answers) {
-          expect(entry.a ?? "").toBe("");
-          expect(entry.b ?? "").toBe("");
+      const parsedRoot = JSON.parse(stored) as Record<string, ArcEntry>;
+      const arcEntry = parsedRoot.open;
+      if (arcEntry) {
+        expect(arcEntry.nameA ?? "").toBe("");
+        expect(arcEntry.nameB ?? "").toBe("");
+        if (Array.isArray(arcEntry.answers)) {
+          for (const entry of arcEntry.answers) {
+            expect(entry.a ?? "").toBe("");
+            expect(entry.b ?? "").toBe("");
+          }
         }
       }
     }
@@ -407,7 +415,7 @@ test.describe("Common Ground session flow", () => {
     expect(body).not.toMatch(/XMLHttpRequest/);
     expect(body).not.toMatch(/sendBeacon/);
     expect(body).toContain("sessionStorage");
-    expect(body).toContain("common-ground.session.v1");
+    expect(body).toContain("common-ground.session.v2");
   });
 
   test("session page is single-column at mobile width", async ({ page }) => {

@@ -28,24 +28,35 @@ changes.)
 
 ## How to use
 
-1. Open the URL together on one device and tap **Start a session**.
-2. Pop in both partners' names so the prompts and summary can address each
-   of you.
-3. Step through six structured prompts about near-term decisions, what
-   feels good and uncertain, a hypothetical windfall, a recurring expense
-   to revisit, the year ahead, and how each of you grew up with money.
-   Each prompt has two labelled answer boxes — one per partner — and you
-   can leave either or both empty. **Back** and **Next** carry your
-   answers with you; nothing is final until you say so.
-4. After prompt 6, take a moment together on the **"Anything to come
-   back to?"** screen. Each of you can tag any of the six prompts as
-   worth revisiting later — with an optional one-line note — or skip the
-   reflection entirely. Tagged prompts then appear in a **Worth coming
-   back to** section at the top of the summary.
-5. End on a shared summary of all six prompts. Use **Save as PDF** to
-   trigger your browser's print dialogue and choose "Save as PDF" as the
-   destination — that's how you keep a copy. Skipped prompts stay in the
-   summary marked *(skipped)* so you can see what you passed over.
+1. Open the URL together on one device. The landing page now offers two
+   conversations side by side — pick the one that fits the sitting:
+   - **An open conversation** (six prompts). The original arc — broad
+     prompts about near-term decisions, what feels good and uncertain, a
+     hypothetical windfall, a recurring expense, the year ahead, and how
+     each of you grew up with money.
+   - **A big upcoming purchase** (five prompts). A focused arc for a
+     household weighing a specific buy — what it is and roughly costs,
+     what it would change about your day-to-day, what you'd trade for
+     it, what would make it feel comfortable, and where you'd each like
+     to be in twelve months.
+2. Pop in both partners' names so the prompts and summary can address
+   each of you. Each arc keeps its own answers — switching between them
+   from the landing page does not mix the two.
+3. Step through the chosen arc's prompts. Each prompt has two labelled
+   answer boxes — one per partner — and you can leave either or both
+   empty. **Back** and **Next** carry your answers with you; nothing is
+   final until you say so.
+4. After the final prompt of either arc, take a moment together on the
+   **"Anything to come back to?"** screen. Each of you can tag any of
+   that arc's prompts as worth revisiting later — with an optional
+   one-line note — or skip the reflection entirely. Tagged prompts then
+   appear in a **Worth coming back to** section at the top of the
+   summary.
+5. End on a shared summary of the chosen arc, headed with its name. Use
+   **Save as PDF** to trigger your browser's print dialogue and choose
+   "Save as PDF" as the destination — that's how you keep a copy.
+   Skipped prompts stay in the summary marked *(skipped)* so you can see
+   what you passed over.
 
 The whole sitting takes ten to fifteen minutes for two people.
 

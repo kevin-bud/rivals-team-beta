@@ -39,7 +39,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
       expect(promptText?.trim()).toBe(PROMPTS[i]);
 
       const progress = await page.locator("#progress-text").textContent();
-      expect(progress?.trim()).toBe(`Prompt ${i + 1} of 6`);
+      expect(progress).toContain(`Prompt ${i + 1} of 6`);
 
       const nextLabel = await page.locator("#next-btn").textContent();
       if (i === PROMPTS.length - 1) {
@@ -79,42 +79,42 @@ test.describe("Six-prompt arc — independent verifier", () => {
     await page.locator("#next-btn").click();
 
     // Prompt 2
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 2 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 2 of 6");
     await page.locator("#answer-a").fill("a2-alex");
     await page.locator("#answer-b").fill("a2-bea");
     await page.locator("#next-btn").click();
 
     // Prompt 3
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 3 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 3 of 6");
     await page.locator("#answer-a").fill("a3-alex");
     await page.locator("#answer-b").fill("a3-bea");
 
     // Back twice -> should be back on prompt 1 with "a1-alex"/"a1-bea".
     await page.locator("#back-btn").click();
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 2 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 2 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("a2-alex");
     await expect(page.locator("#answer-b")).toHaveValue("a2-bea");
 
     await page.locator("#back-btn").click();
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 1 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 1 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("a1-alex");
     await expect(page.locator("#answer-b")).toHaveValue("a1-bea");
 
     // Now Next forward — values should still be there.
     await page.locator("#next-btn").click();
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 2 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 2 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("a2-alex");
     await expect(page.locator("#answer-b")).toHaveValue("a2-bea");
 
     await page.locator("#next-btn").click();
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 3 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 3 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("a3-alex");
     await expect(page.locator("#answer-b")).toHaveValue("a3-bea");
 
     // Back button hidden on prompt 1.
     await page.locator("#back-btn").click();
     await page.locator("#back-btn").click();
-    await expect(page.locator("#progress-text")).toHaveText("Prompt 1 of 6");
+    await expect(page.locator("#progress-text")).toContainText("Prompt 1 of 6");
     await expect(page.locator("#back-btn")).toBeHidden();
   });
 
@@ -389,7 +389,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
 
     // Confirm sessionStorage — the only persistence mechanism.
     const ss = await page.evaluate(() =>
-      window.sessionStorage.getItem("common-ground.session.v1"),
+      window.sessionStorage.getItem("common-ground.session.v2"),
     );
     expect(ss).toBeTruthy();
     expect(ss).toContain("UNIQUE-ALEX-MARKER");
@@ -397,7 +397,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
 
     // Confirm answers do NOT live in localStorage or cookies.
     const ls = await page.evaluate(() =>
-      window.localStorage.getItem("common-ground.session.v1"),
+      window.localStorage.getItem("common-ground.session.v2"),
     );
     expect(ls).toBeNull();
     const localKeys = await page.evaluate(() =>
@@ -425,7 +425,7 @@ test.describe("Six-prompt arc — independent verifier", () => {
     // After restart: storage may be re-created by show() with step:"setup",
     // but it must NOT contain the answer markers.
     const ssAfter = await page.evaluate(() =>
-      window.sessionStorage.getItem("common-ground.session.v1"),
+      window.sessionStorage.getItem("common-ground.session.v2"),
     );
     if (ssAfter !== null) {
       expect(ssAfter).not.toContain("UNIQUE-ALEX-MARKER");

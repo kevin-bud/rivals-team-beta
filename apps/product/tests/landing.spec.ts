@@ -46,18 +46,38 @@ test.describe("Common Ground landing page", () => {
     page,
   }) => {
     await page.goto("/");
-    const together = page.locator(".together");
+    const together = page.locator("header .together");
     await expect(together).toContainText("two or more people");
     await expect(together).toContainText("household");
   });
 
-  test("has a working 'Start a session' CTA linking to /session", async ({
+  test("surfaces both arcs as parallel CTAs linking to /session?arc=...", async ({
     page,
   }) => {
     await page.goto("/");
-    const cta = page.getByRole("button", { name: /start a session/i });
-    await expect(cta).toBeVisible();
-    await expect(cta).toHaveAttribute("href", "/session");
+    const openCta = page.getByRole("button", {
+      name: /start an open conversation/i,
+    });
+    const purchaseCta = page.getByRole("button", {
+      name: /start a big-purchase conversation/i,
+    });
+    await expect(openCta).toBeVisible();
+    await expect(purchaseCta).toBeVisible();
+    await expect(openCta).toHaveAttribute("href", "/session?arc=open");
+    await expect(purchaseCta).toHaveAttribute(
+      "href",
+      "/session?arc=purchase",
+    );
+    // Both arcs are visible, equal-citizen cards on the landing surface.
+    const cards = page.locator(".arc-choice");
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0)).toContainText("An open conversation");
+    await expect(cards.nth(1)).toContainText("A big upcoming purchase");
+    // No "recommended" / "popular" framing on either card.
+    const cardsText = (await cards.allTextContents()).join(" ").toLowerCase();
+    expect(cardsText).not.toContain("recommended");
+    expect(cardsText).not.toContain("popular");
+    expect(cardsText).not.toContain("good for beginners");
   });
 
   test("footer carries the financial-advice disclaimer", async ({ page }) => {
