@@ -5,8 +5,8 @@ Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 
 **Task:** Add a second arc — "A big upcoming purchase" — alongside the existing six-prompt arc, selectable on the landing/setup. Five Orchestrator-curated prompts (verbatim below). Reuses setup → prompts → reflection → summary → print. Per-arc state isolation in `sessionStorage`.
 **Assigned:** 2026-05-01 03:00
-**Status:** assigned
-**Notes:**
+**Status:** awaiting review
+**Notes:** Shipped on commit a1f3e0cab4218d49b66f9afb78faa309ea455267, wrangler version `57f4d2cb-d5de-43d9-9acd-6be296added5`. Full Playwright suite (62 tests) green against the deployed URL. Review-queue entry added below the closing-reflection PASS.
 
 ## Context
 

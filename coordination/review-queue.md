@@ -311,3 +311,78 @@ Notes (non-blocking):
 
 Closing reflection step shipped. The seventh screen between prompt 6 and the summary, the "Worth coming back to" section in both screen and print summary, sessionStorage-only persistence, en-GB copy, and mobile readability all verified independently against the deployed URL. PASS.
 
+---
+
+## 2026-05-01 — Second arc "A big upcoming purchase" shipped
+
+**Commit:** a1f3e0cab4218d49b66f9afb78faa309ea455267 (with predecessor bd3608c)
+**Deployed URL:** https://rivals-team-beta-product.kevin-wilson.workers.dev
+**Wrangler version ID:** 57f4d2cb-d5de-43d9-9acd-6be296added5
+
+**Claim:** A second curated conversation arc — "A big upcoming purchase", five Orchestrator-locked prompts — has been added alongside the existing six-prompt arc, which is now named "An open conversation". The landing page surfaces both arcs as parallel CTAs (`/session?arc=open` and `/session?arc=purchase`). The reused setup → prompts → reflection → summary → print flow is driven by per-arc prompt data; per-arc state is isolated in `sessionStorage` under a single root key (`common-ground.session.v2`) keyed by arc id, so answers/tags/notes for one arc never leak into the other. Six-prompt wording is unchanged. Privacy posture preserved — zero `fetch`/`XHR`/`sendBeacon` tokens in either arc's served document, zero non-GET requests across both end-to-end flows including print clicks.
+
+**Engineer evidence:**
+- `pnpm --filter product run deploy` succeeded — version `57f4d2cb-d5de-43d9-9acd-6be296added5`.
+- `pnpm --filter product build` clean. `pnpm --filter product lint` clean (one pre-existing warning in `tests/six-prompt-arc-verifier.spec.ts:344` about an unused `@typescript-eslint/no-explicit-any` directive — not introduced by this slice).
+- `curl -sI` against `/`, `/session?arc=open`, `/session?arc=purchase` all returned `HTTP/2 200` with `content-type: text/html; charset=utf-8`.
+- `curl -s '.../session?arc=purchase' | grep -cE 'fetch\(|XMLHttpRequest|sendBeacon'` returned `0`. Same for `/session?arc=open` and `/`.
+- `curl -s '.../' | grep -oE 'A big upcoming purchase|An open conversation' | sort -u` returned both arc names.
+- Local Playwright run against the deployed URL: **62/62 passing in 8.3s** (`PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e`). New suite at `apps/product/tests/arcs.spec.ts` (13 tests) plus the existing 49 tests across `landing`, `smoke`, `session-flow`, `reflection`, `six-prompt-arc-verifier`. Existing tests updated where necessary for the renamed CTA / arc-aware progress text / v2 storage key.
+
+**Reviewer checklist (item-by-item against the 16 numbered DoD items in `coordination/current-task.md`):**
+
+1. **Two named arcs.** `tests/arcs.spec.ts:landing surfaces both arcs as parallel CTAs` confirms two `.arc-choice` cards on `/`, one labelled "An open conversation" with "Six prompts" meta, one labelled "A big upcoming purchase" with "Five prompts" meta. The arc name is consistently used across:
+   - Landing card heading and CTA copy ("Start an open conversation" / "Start a big-purchase conversation").
+   - Setup screen — `#step-setup` on `/session?arc=purchase` contains "A big upcoming purchase" (asserted by `clicking the big-purchase CTA lands on /session?arc=purchase with arc-aware setup`).
+   - Header arc tag (`#arc-tag` with `data-arc="purchase"`).
+   - Prompt header progress text — `Prompt N of TOTAL — A big upcoming purchase` / `Prompt N of TOTAL — An open conversation` (asserted by `walks the big-purchase arc — five verbatim prompts in order, named summary` and `regression — open arc still walks all six prompts in order`).
+   - Reflection intro copy — "Tag any prompts from **A big upcoming purchase** that either of you would like to revisit later".
+   - Summary heading — `Your big-purchase conversation` / `Your open conversation`.
+   - Print heading — `A household money conversation — A big upcoming purchase` (asserted in the print emulation test).
+
+2. **Five purchase prompts verbatim and in order.** `tests/arcs.spec.ts:walks the big-purchase arc — five verbatim prompts in order, named summary` asserts each `#prompt-text` matches the verbatim string from the brief, character-for-character (including the en-dashes in prompts 3 and 5, the contraction in "didn't", the curly apostrophe in "Imagine yourselves"). The summary then re-asserts each `.prompt-text` against the same verbatim list.
+
+3. **Arc selection on the landing.** `tests/arcs.spec.ts:landing surfaces both arcs as parallel CTAs` asserts both `.arc-choice` cards are visible, each with a `Start an ...` CTA linking to its arc URL. `tests/landing.spec.ts:surfaces both arcs as parallel CTAs linking to /session?arc=...` provides a regression-style equivalent. The card layout is `display: grid` with `grid-template-columns: 1fr 1fr` at ≥36rem and `1fr` below — the cards are visibly equal-citizen, not buried in a secondary link. Arc-name communication through the rest of the flow is asserted in DoD-1 above (setup, prompt header, summary heading, print heading).
+
+4. **Flow reuse.** Same screen IDs (`#step-setup`, `#step-prompt`, `#step-reflection`, `#step-summary`) and same buttons (`#begin-btn`, `#back-btn`, `#next-btn`, `#reflection-back-btn`, `#reflection-next-btn`, `#print-btn`, `#restart-link`). The session script is unchanged in shape — only the prompts/arc metadata it reads from `#prompts-data` differ. Reflection step references the chosen arc's prompts (DoD 6); summary lists the chosen arc's prompts in original order (DoD 7).
+
+5. **Per-arc state isolation in `sessionStorage`.** Storage key migrated from `common-ground.session.v1` to `common-ground.session.v2`, keyed by arc id at the root: `{ open: { …per-arc state… }, purchase: { …per-arc state… } }`. `tests/arcs.spec.ts:per-arc state isolation: starting arc B after partial arc A shows empty inputs` walks arc A halfway through, navigates back to landing, starts arc B, asserts both name fields and prompt-1 textareas are empty in arc B; types in arc B; then re-enters arc A and asserts arc A's prior state has been preserved on its own sub-key. The raw storage object is then inspected to confirm `parsedRoot.open` contains the `OPEN-LEAK-A` marker and not the `PURCHASE-A` marker, and vice versa. `'Start a new session' on one arc clears only that arc` confirms restart on the purchase summary clears the purchase sub-key while leaving the open sub-key intact (with its `KeepMe-A` name and `OPEN-PRESERVED` answer marker). The `common-ground.session.v1` key from the previous slice is never written by the new code; pre-existing v1 state in a returning visitor's `sessionStorage` is simply ignored (not migrated, not read).
+
+6. **Reflection step references the chosen arc's prompts.** `tests/arcs.spec.ts:walks the big-purchase arc — five verbatim prompts in order, named summary` asserts the reflection screen has exactly five `.reflection-row` rows for the purchase arc, each containing the verbatim purchase prompt; and asserts the entire `#step-reflection` text does NOT contain any of the open arc's six prompts. The `regression — open arc still walks all six prompts in order` test exercises the equivalent on the open arc. No cross-arc tagging — the reflection state arrays are sized to the active arc's prompt count.
+
+7. **Summary and print.**
+   - Summary heading names which arc is being summarised — `#summary-heading` reads "Your big-purchase conversation" or "Your open conversation" (asserted by both new arc tests).
+   - "Worth coming back to" still appears at the top when at least one prompt is tagged, hidden otherwise — `tests/arcs.spec.ts:Worth coming back to and print emulation work on the big-purchase arc` tags one purchase prompt with a note, asserts `#revisit-section` is visible on the summary, asserts ordering (revisit ordinate < first summary block ordinate) under print emulation, asserts the verbatim purchase prompt wording in the revisit item, asserts the partner name and note are present.
+   - Tagged items appear in original prompt order of the chosen arc (rendered by `renderRevisit()` which iterates `tags` from index 0 to `TOTAL-1`, only emitting items where `aTagged || bTagged`).
+   - Printed A4: hidden chrome via the existing `@media print` block (no changes to chrome-hiding rules); the print-only header `<h1>` now reads `A household money conversation — A big upcoming purchase` so two printed PDFs can be told apart at a glance. Advisory footer appears once via `.print-footer`. Asserted in the print emulation test under DoD 7 above.
+
+8. **Privacy posture preserved.**
+   - `curl -s '.../session?arc=purchase' | grep -cE 'fetch\(|XMLHttpRequest|sendBeacon'` returns `0`. Same for `/session?arc=open` and `/`.
+   - `tests/arcs.spec.ts:served session source for both arcs has no fetch/XHR/sendBeacon and the right prompts` and `tests/session-flow.spec.ts:served /session source contains no fetch/XHR/sendBeacon calls` assert the same against the deployed URL.
+   - `tests/arcs.spec.ts:zero non-GET requests across both arcs end-to-end including print clicks` walks both arcs through six-prompt and five-prompt paths with sentinel answers AND a sentinel reflection note, stubs `window.print` and clicks `#print-btn` on each arc's summary. Recorded zero non-GET requests; asserted no recorded request URL or POST body contains any sentinel from either arc.
+   - No new persistence: only `sessionStorage` under `common-ground.session.v2`, root object keyed by arc id. No KV, D1, R2, Durable Objects, cookies, `localStorage`, or remote fetches.
+
+9. **No advice, no scoring, no ranking.** Tagged items rendered in original prompt order (see DoD 7). The arc selector cards do not carry "recommended" / "popular" / "good for beginners" / "best for" / "most chosen" badges — `tests/arcs.spec.ts:landing surfaces both arcs as parallel CTAs` and `tests/landing.spec.ts:surfaces both arcs as parallel CTAs linking to /session?arc=...` both assert these strings are absent (case-insensitive). The two cards differ only in arc-specific copy (name, count, blurb).
+
+10. **British English.** `<html lang="en-GB">` on `/`, `/session?arc=open`, `/session?arc=purchase` (asserted by existing `landing.spec.ts:uses British English locale on <html>`, existing `session-flow.spec.ts:html lang is en-GB on /session`, and new `arcs.spec.ts:html lang is en-GB on /session?arc=purchase and copy uses British spelling`). New copy in British English: arc names ("An open conversation", "A big upcoming purchase"), CTAs ("Start an open conversation", "Start a big-purchase conversation"), card meta ("Six prompts", "Five prompts"), arc-tag pill, and the setup-screen "Pick a different conversation" link wording. The big-purchase arc's prompts use British phrasing as supplied by the Orchestrator ("trade off", "comfortable rather than tight", "twelve months"). New arc-tests guard against `favorite`/`behavior` Americanisms in arc copy.
+
+11. **Mobile-readable at 375px.** `tests/arcs.spec.ts:big-purchase arc is mobile-readable at 375px` sets viewport to 375×800, walks the purchase arc to summary, asserts `main` width ≤375px and `documentElement.scrollWidth ≤ clientWidth + 1` on both the prompt screen and the summary. `tests/arcs.spec.ts:landing page is mobile-readable at 375px and arcs stack` asserts the landing's two `.arc-choice` cards stack into a single column at 375px (the grid is `1fr` until `min-width: 36rem`) and the document does not horizontally scroll. Existing mobile tests on the open arc and reflection screen continue to pass.
+
+12. **Six-prompt arc wording is unchanged.** `tests/session-flow.spec.ts:walks through all six prompts in order with verbatim wording`, `tests/six-prompt-arc-verifier.spec.ts:1. six prompts appear in the exact verbatim order via Next`, and `tests/arcs.spec.ts:regression — open arc still walks all six prompts in order` all walk the open arc and assert each prompt matches its verbatim string. The `OPEN_PROMPTS` constants in both `arcs.spec.ts` and the existing `PROMPTS` constants in `reflection.spec.ts` / `session-flow.spec.ts` / `six-prompt-arc-verifier.spec.ts` are identical character-for-character to the brief.
+
+13. **Tests.** New suite at `apps/product/tests/arcs.spec.ts` (13 tests) covers each DoD-13 sub-item:
+    - Both arcs reachable from the landing surface — `landing surfaces both arcs as parallel CTAs`, `clicking the big-purchase CTA lands on /session?arc=purchase with arc-aware setup`.
+    - Walking the big-purchase arc produces a summary that lists the five verbatim prompts in order — `walks the big-purchase arc — five verbatim prompts in order, named summary`.
+    - Walking the open arc still produces the existing six-prompt summary in the existing order (regression) — `regression — open arc still walks all six prompts in order`.
+    - Per-arc state isolation: start arc A, partially answer, then switch to arc B from the landing — arc B's inputs are empty — `per-arc state isolation: starting arc B after partial arc A shows empty inputs`.
+    - Reflection step on the big-purchase arc lists exactly its five prompts (no leakage) — asserted inline in `walks the big-purchase arc — five verbatim prompts in order, named summary` (`reflectionText.not.toContain(openPrompt)` for every open prompt).
+    - Print emulation on the big-purchase arc produces a clean A4 summary with the arc named in the heading and "Worth coming back to" at the top when tags exist — `Worth coming back to and print emulation work on the big-purchase arc`.
+    - Network watch through both arcs end-to-end (six prompts AND five prompts paths, including print clicks): zero non-GET requests — `zero non-GET requests across both arcs end-to-end including print clicks`.
+    - Plus structural / source / mobile / locale / default-arc / restart-isolation / served-source tests: 13 tests in total, all green against the deployed URL.
+
+14. **README "How to use"** updated to describe both conversations and how to choose between them. The bulleted list (5 items) renumbered/rewritten in place — bullet 1 now lists both arcs with one-line summaries, bullet 2 references per-arc isolation, bullets 3–5 generalise the chosen-arc flow. British English. No bloat (the section is roughly the same length as before).
+
+15. **`pnpm --filter product run deploy` succeeded.** New version `57f4d2cb-d5de-43d9-9acd-6be296added5`. Deployed to https://rivals-team-beta-product.kevin-wilson.workers.dev. Verified with `curl -sI` on `/`, `/session?arc=open`, `/session?arc=purchase` (all 200 HTML). Full Playwright suite ran against the deployed URL: **62 tests, all passing in 8.3s**.
+
+16. **This entry.** Commit SHA, deployed URL, version ID, and the 16-item Reviewer checklist mapping each DoD item are all present above.
+
