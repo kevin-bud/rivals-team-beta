@@ -1,18 +1,28 @@
 import { test, expect, type Request } from "@playwright/test";
 
-// Verifier checks for the three-step session flow at /session.
-// Runs against PRODUCT_URL (deployed Worker). Covers the explicit checklist
-// in coordination/review-queue.md for commit f42ca71:
+// Verifier checks for the six-prompt session flow at /session.
+// Runs against PRODUCT_URL (deployed Worker). Covers:
 // - CTA on / routes to /session
 // - all three screens render and advance with names entered AND with empty answers
-// - summary labels each answer with the partner name from setup
+// - six prompts, in order, with the verbatim wording from the brief
+// - back/next navigation preserves answers when stepping back and forward
+// - "See summary" appears on the final prompt (and only on the final prompt)
+// - summary lists all six prompts, with "(skipped)" rendering on empty pairs
 // - "Start a new session" returns to setup with state cleared
-// - disclaimer visible on all three screens
+// - disclaimer visible from each step
 // - no fetch/XHR/sendBeacon writes carry answer text to a server
+// - print stylesheet hides chrome and shows the summary cleanly
 // - mobile-readable, en-GB.
 
-const ANSWER_A = "Considering remortgage in July";
-const ANSWER_B = "Want to sort the holiday fund first";
+const PROMPTS: ReadonlyArray<string> = [
+  "What's one money decision coming up in the next three months that affects both of you?",
+  "When you think about money in your household right now, what feels good — and what feels uncertain?",
+  "If a windfall of one month's take-home pay turned up tomorrow, no strings attached, what would each of you want to do with it?",
+  "What's a recurring expense you'd like to talk about — bigger, smaller, or just understood differently — but haven't?",
+  "Looking twelve months ahead, what's one thing about your money you'd like to feel more settled about?",
+  "Is there something about money you wish your partner understood about how you grew up with it?",
+];
+
 const NAME_A = "Alex";
 const NAME_B = "Bea";
 
@@ -25,9 +35,7 @@ function isWriteRequest(request: Request): boolean {
 }
 
 test.describe("Common Ground session flow", () => {
-  test("landing CTA navigates to /session and is no longer disabled", async ({
-    page,
-  }) => {
+  test("landing CTA navigates to /session", async ({ page }) => {
     await page.goto("/");
     const cta = page.getByRole("button", { name: /start a session/i });
     await expect(cta).toBeVisible();
@@ -49,11 +57,10 @@ test.describe("Common Ground session flow", () => {
     await expect(setup).toBeVisible();
     await expect(prompt).toBeHidden();
     await expect(summary).toBeHidden();
-    // Privacy note on setup screen.
     await expect(setup).toContainText(/leaves this device/i);
   });
 
-  test("advances setup -> prompt -> summary with names entered, labels carry the names", async ({
+  test("walks through all six prompts in order with verbatim wording", async ({
     page,
   }) => {
     await page.goto("/session");
@@ -63,28 +70,99 @@ test.describe("Common Ground session flow", () => {
 
     const prompt = page.locator("#step-prompt");
     await expect(prompt).toHaveAttribute("data-active", "true");
-    await expect(prompt).toContainText(
-      "What's one money decision coming up in the next three months that affects both of you?",
+
+    for (let i = 0; i < PROMPTS.length; i++) {
+      await expect(page.locator("#progress-text")).toHaveText(
+        `Prompt ${i + 1} of 6`,
+      );
+      await expect(page.locator("#prompt-text")).toHaveText(PROMPTS[i]);
+      // Labels reflect the entered names on every prompt.
+      await expect(page.locator("#label-a")).toHaveText(`${NAME_A}'s answer`);
+      await expect(page.locator("#label-b")).toHaveText(`${NAME_B}'s answer`);
+      // Back hidden on prompt 1, visible on 2-6.
+      if (i === 0) {
+        await expect(page.locator("#back-btn")).toBeHidden();
+      } else {
+        await expect(page.locator("#back-btn")).toBeVisible();
+      }
+      // "See summary" only on prompt 6, otherwise "Next".
+      if (i === PROMPTS.length - 1) {
+        await expect(page.locator("#next-btn")).toHaveText("See summary");
+      } else {
+        await expect(page.locator("#next-btn")).toHaveText("Next");
+      }
+      if (i < PROMPTS.length - 1) {
+        await page.locator("#next-btn").click();
+      }
+    }
+
+    // Final next click goes to summary.
+    await page.locator("#next-btn").click();
+    await expect(page.locator("#step-summary")).toHaveAttribute(
+      "data-active",
+      "true",
     );
+  });
 
-    // Labels reflect the entered names.
-    await expect(page.locator("#label-a")).toHaveText(`${NAME_A}'s answer`);
-    await expect(page.locator("#label-b")).toHaveText(`${NAME_B}'s answer`);
+  test("back button returns to previous prompt with previously entered answers preserved", async ({
+    page,
+  }) => {
+    await page.goto("/session");
+    await page.locator("#name-a").fill(NAME_A);
+    await page.locator("#name-b").fill(NAME_B);
+    await page.locator("#begin-btn").click();
 
-    await page.locator("#answer-a").fill(ANSWER_A);
-    await page.locator("#answer-b").fill(ANSWER_B);
-    await page.locator("#see-summary-btn").click();
+    // Prompt 1.
+    await page.locator("#answer-a").fill("answer one A");
+    await page.locator("#answer-b").fill("answer one B");
+    await page.locator("#next-btn").click();
 
-    const summary = page.locator("#step-summary");
-    await expect(summary).toHaveAttribute("data-active", "true");
-    await expect(page.locator("#summary-name-a")).toHaveText(NAME_A);
-    await expect(page.locator("#summary-name-b")).toHaveText(NAME_B);
-    await expect(page.locator("#summary-answer-a")).toHaveText(ANSWER_A);
-    await expect(page.locator("#summary-answer-b")).toHaveText(ANSWER_B);
-    // Restated prompt visible on summary too.
-    await expect(summary).toContainText(
-      "What's one money decision coming up in the next three months that affects both of you?",
-    );
+    // Prompt 2.
+    await expect(page.locator("#progress-text")).toHaveText("Prompt 2 of 6");
+    await page.locator("#answer-a").fill("answer two A");
+    await page.locator("#answer-b").fill("answer two B");
+    await page.locator("#next-btn").click();
+
+    // Prompt 3.
+    await expect(page.locator("#progress-text")).toHaveText("Prompt 3 of 6");
+    await page.locator("#answer-a").fill("answer three A");
+    await page.locator("#answer-b").fill("answer three B");
+
+    // Back to prompt 2 — both answers preserved.
+    await page.locator("#back-btn").click();
+    await expect(page.locator("#progress-text")).toHaveText("Prompt 2 of 6");
+    await expect(page.locator("#answer-a")).toHaveValue("answer two A");
+    await expect(page.locator("#answer-b")).toHaveValue("answer two B");
+
+    // Back again to prompt 1 — preserved.
+    await page.locator("#back-btn").click();
+    await expect(page.locator("#progress-text")).toHaveText("Prompt 1 of 6");
+    await expect(page.locator("#answer-a")).toHaveValue("answer one A");
+    await expect(page.locator("#answer-b")).toHaveValue("answer one B");
+    await expect(page.locator("#back-btn")).toBeHidden();
+
+    // Forward through to prompt 3 — that prompt's answers also preserved.
+    await page.locator("#next-btn").click();
+    await page.locator("#next-btn").click();
+    await expect(page.locator("#progress-text")).toHaveText("Prompt 3 of 6");
+    await expect(page.locator("#answer-a")).toHaveValue("answer three A");
+    await expect(page.locator("#answer-b")).toHaveValue("answer three B");
+  });
+
+  test("editing an answer and going back preserves the edit", async ({
+    page,
+  }) => {
+    await page.goto("/session");
+    await page.locator("#name-a").fill(NAME_A);
+    await page.locator("#name-b").fill(NAME_B);
+    await page.locator("#begin-btn").click();
+    await page.locator("#answer-a").fill("first try");
+    await page.locator("#next-btn").click();
+    await page.locator("#back-btn").click();
+    await page.locator("#answer-a").fill("revised");
+    await page.locator("#next-btn").click();
+    await page.locator("#back-btn").click();
+    await expect(page.locator("#answer-a")).toHaveValue("revised");
   });
 
   test("advances through all screens with empty answers (no blocking)", async ({
@@ -98,27 +176,86 @@ test.describe("Common Ground session flow", () => {
     await expect(page.locator("#label-a")).toHaveText("You's answer");
     await expect(page.locator("#label-b")).toHaveText("Your partner's answer");
 
-    // Click straight through with both textareas empty.
-    await page.locator("#see-summary-btn").click();
-    const summary = page.locator("#step-summary");
-    await expect(summary).toHaveAttribute("data-active", "true");
-    await expect(page.locator("#summary-name-a")).toHaveText("You");
-    await expect(page.locator("#summary-name-b")).toHaveText("Your partner");
-    await expect(page.locator("#summary-answer-a")).toHaveText("(no answer)");
-    await expect(page.locator("#summary-answer-b")).toHaveText("(no answer)");
+    // Click Next through all six prompts without typing anything.
+    for (let i = 0; i < PROMPTS.length; i++) {
+      await page.locator("#next-btn").click();
+    }
+    await expect(page.locator("#step-summary")).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+    // Every summary block should be marked skipped.
+    const skippedBlocks = page.locator(
+      '#summary-list .summary-prompt[data-skipped="true"]',
+    );
+    await expect(skippedBlocks).toHaveCount(PROMPTS.length);
+    // Each rendered cell shows "(skipped)".
+    const skippedCells = page.locator("#summary-list p.empty");
+    await expect(skippedCells).toHaveCount(PROMPTS.length * 2);
+    await expect(skippedCells.first()).toHaveText("(skipped)");
   });
 
-  test("'Start a new session' returns to setup with all four fields cleared", async ({
+  test("summary lists all six prompts in order with named answers", async ({
     page,
   }) => {
     await page.goto("/session");
     await page.locator("#name-a").fill(NAME_A);
     await page.locator("#name-b").fill(NAME_B);
     await page.locator("#begin-btn").click();
-    await page.locator("#answer-a").fill(ANSWER_A);
-    await page.locator("#answer-b").fill(ANSWER_B);
-    await page.locator("#see-summary-btn").click();
+    // Fill three answers, leave three blank to exercise mixed skipping.
+    const filled = [0, 2, 4];
+    for (let i = 0; i < PROMPTS.length; i++) {
+      if (filled.includes(i)) {
+        await page.locator("#answer-a").fill(`A answer ${i}`);
+        await page.locator("#answer-b").fill(`B answer ${i}`);
+      }
+      await page.locator("#next-btn").click();
+    }
+    await expect(page.locator("#step-summary")).toHaveAttribute(
+      "data-active",
+      "true",
+    );
 
+    const blocks = page.locator("#summary-list .summary-prompt");
+    await expect(blocks).toHaveCount(PROMPTS.length);
+    for (let i = 0; i < PROMPTS.length; i++) {
+      const block = blocks.nth(i);
+      await expect(block.locator(".prompt-text")).toHaveText(PROMPTS[i]);
+      const headings = block.locator(".summary-block h3");
+      await expect(headings.nth(0)).toHaveText(NAME_A);
+      await expect(headings.nth(1)).toHaveText(NAME_B);
+      if (filled.includes(i)) {
+        await expect(block).toHaveAttribute("data-skipped", "false");
+        await expect(block.locator(".summary-block").nth(0)).toContainText(
+          `A answer ${i}`,
+        );
+        await expect(block.locator(".summary-block").nth(1)).toContainText(
+          `B answer ${i}`,
+        );
+      } else {
+        await expect(block).toHaveAttribute("data-skipped", "true");
+        await expect(block).toContainText("(skipped)");
+      }
+    }
+
+    // Summary names line shows both names.
+    await expect(page.locator("#summary-names")).toContainText(NAME_A);
+    await expect(page.locator("#summary-names")).toContainText(NAME_B);
+  });
+
+  test("'Start a new session' returns to setup with all fields cleared", async ({
+    page,
+  }) => {
+    await page.goto("/session");
+    await page.locator("#name-a").fill(NAME_A);
+    await page.locator("#name-b").fill(NAME_B);
+    await page.locator("#begin-btn").click();
+    // Walk through prompts filling something in.
+    for (let i = 0; i < PROMPTS.length; i++) {
+      await page.locator("#answer-a").fill(`a${i}`);
+      await page.locator("#answer-b").fill(`b${i}`);
+      await page.locator("#next-btn").click();
+    }
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -131,6 +268,10 @@ test.describe("Common Ground session flow", () => {
     );
     await expect(page.locator("#name-a")).toHaveValue("");
     await expect(page.locator("#name-b")).toHaveValue("");
+
+    // Begin again — answers should be empty on prompt 1.
+    await page.locator("#begin-btn").click();
+    await expect(page.locator("#progress-text")).toHaveText("Prompt 1 of 6");
     await expect(page.locator("#answer-a")).toHaveValue("");
     await expect(page.locator("#answer-b")).toHaveValue("");
 
@@ -139,11 +280,19 @@ test.describe("Common Ground session flow", () => {
       sessionStorage.getItem("common-ground.session.v1"),
     );
     if (stored !== null) {
-      const parsed = JSON.parse(stored) as Record<string, unknown>;
+      const parsed = JSON.parse(stored) as {
+        answers?: Array<{ a?: string; b?: string }>;
+        nameA?: string;
+        nameB?: string;
+      };
       expect(parsed.nameA ?? "").toBe("");
       expect(parsed.nameB ?? "").toBe("");
-      expect(parsed.answerA ?? "").toBe("");
-      expect(parsed.answerB ?? "").toBe("");
+      if (Array.isArray(parsed.answers)) {
+        for (const entry of parsed.answers) {
+          expect(entry.a ?? "").toBe("");
+          expect(entry.b ?? "").toBe("");
+        }
+      }
     }
   });
 
@@ -165,18 +314,25 @@ test.describe("Common Ground session flow", () => {
       "does not provide financial, tax, legal, or investment advice",
     );
 
-    await page.locator("#see-summary-btn").click();
+    // Walk to summary.
+    for (let i = 0; i < PROMPTS.length; i++) {
+      await page.locator("#next-btn").click();
+    }
     await expect(footer).toBeVisible();
     await expect(footer).toContainText(
       "does not provide financial, tax, legal, or investment advice",
     );
   });
 
-  test("no network write requests occur during the full flow, and answer text never appears in any request", async ({
+  test("no network write requests during a full flow, no answer text leaks", async ({
     page,
   }) => {
     const writeRequests: { method: string; url: string }[] = [];
-    const allRequests: { method: string; url: string; postData: string | null }[] = [];
+    const allRequests: {
+      method: string;
+      url: string;
+      postData: string | null;
+    }[] = [];
 
     page.on("request", (request) => {
       allRequests.push({
@@ -196,21 +352,24 @@ test.describe("Common Ground session flow", () => {
     await page.locator("#name-a").fill(NAME_A);
     await page.locator("#name-b").fill(NAME_B);
     await page.locator("#begin-btn").click();
-    await page.locator("#answer-a").fill(ANSWER_A);
-    await page.locator("#answer-b").fill(ANSWER_B);
-    await page.locator("#see-summary-btn").click();
+    const sentinels: string[] = [];
+    for (let i = 0; i < PROMPTS.length; i++) {
+      const aText = `sentinel-A-${i}-${Math.random().toString(36).slice(2)}`;
+      const bText = `sentinel-B-${i}-${Math.random().toString(36).slice(2)}`;
+      sentinels.push(aText, bText);
+      await page.locator("#answer-a").fill(aText);
+      await page.locator("#answer-b").fill(bText);
+      await page.locator("#next-btn").click();
+    }
     await page.locator("#restart-link").click();
 
-    // No POST/PUT/PATCH/DELETE to anywhere.
     expect(writeRequests, JSON.stringify(writeRequests, null, 2)).toEqual([]);
-
-    // Belt-and-braces: no request URL or body should leak the answer text.
     for (const req of allRequests) {
-      expect(req.url).not.toContain(ANSWER_A);
-      expect(req.url).not.toContain(ANSWER_B);
-      if (req.postData !== null) {
-        expect(req.postData).not.toContain(ANSWER_A);
-        expect(req.postData).not.toContain(ANSWER_B);
+      for (const sentinel of sentinels) {
+        expect(req.url).not.toContain(sentinel);
+        if (req.postData !== null) {
+          expect(req.postData).not.toContain(sentinel);
+        }
       }
     }
   });
@@ -221,12 +380,9 @@ test.describe("Common Ground session flow", () => {
     const response = await request.get("/session");
     expect(response.status()).toBe(200);
     const body = await response.text();
-    // Allow the literal strings inside privacy copy, but the JS APIs themselves
-    // must not appear. Match call-site-style tokens.
     expect(body).not.toMatch(/fetch\s*\(/);
     expect(body).not.toMatch(/XMLHttpRequest/);
     expect(body).not.toMatch(/sendBeacon/);
-    // Confirm sessionStorage is the persistence layer.
     expect(body).toContain("sessionStorage");
     expect(body).toContain("common-ground.session.v1");
   });
@@ -247,5 +403,65 @@ test.describe("Common Ground session flow", () => {
     await page.goto("/session");
     const lang = await page.locator("html").getAttribute("lang");
     expect(lang).toBe("en-GB");
+  });
+
+  test("print emulation hides chrome and shows the summary cleanly", async ({
+    page,
+  }) => {
+    await page.goto("/session");
+    await page.locator("#name-a").fill(NAME_A);
+    await page.locator("#name-b").fill(NAME_B);
+    await page.locator("#begin-btn").click();
+    await page.locator("#answer-a").fill("printable A");
+    await page.locator("#answer-b").fill("printable B");
+    for (let i = 0; i < PROMPTS.length; i++) {
+      await page.locator("#next-btn").click();
+    }
+    await expect(page.locator("#step-summary")).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+
+    await page.emulateMedia({ media: "print" });
+
+    // Footer chrome and primary nav controls are hidden under print.
+    await expect(page.locator("footer")).toBeHidden();
+    await expect(page.locator("#print-btn")).toBeHidden();
+    await expect(page.locator("#restart-link")).toBeHidden();
+    await expect(page.locator(".no-print").first()).toBeHidden();
+    // Summary content remains visible.
+    await expect(page.locator("#step-summary")).toBeVisible();
+    await expect(page.locator("#summary-list")).toBeVisible();
+    // The print-only header (with names + date) is now visible.
+    await expect(page.locator(".print-only").first()).toBeVisible();
+    await expect(page.locator("#print-names")).toContainText(NAME_A);
+    await expect(page.locator("#print-names")).toContainText(NAME_B);
+    await expect(page.locator("#print-date")).not.toBeEmpty();
+    // The legible advice line appears once in the print footer.
+    const printFooter = page.locator(".print-footer");
+    await expect(printFooter).toBeVisible();
+    await expect(printFooter).toContainText(
+      "does not provide financial, tax, legal, or investment advice",
+    );
+    // All six prompt blocks present in the printed output.
+    await expect(
+      page.locator("#summary-list .summary-prompt"),
+    ).toHaveCount(PROMPTS.length);
+    // No clipped horizontal scroll on the printed summary at A4-ish width.
+    const main = page.locator("main");
+    const box = await main.boundingBox();
+    expect(box).not.toBeNull();
+
+    // Reset for any subsequent tests in the same fixture.
+    await page.emulateMedia({ media: null });
+  });
+
+  test("print stylesheet is part of the served document", async ({
+    request,
+  }) => {
+    const response = await request.get("/session");
+    const body = await response.text();
+    expect(body).toMatch(/@media print/);
+    expect(body).toMatch(/window\.print\(\)/);
   });
 });

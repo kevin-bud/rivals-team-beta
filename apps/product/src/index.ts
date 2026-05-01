@@ -137,6 +137,9 @@ const sharedStyles = `
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
+  [hidden] {
+    display: none !important;
+  }
   .nav-row {
     display: flex;
     flex-wrap: wrap;

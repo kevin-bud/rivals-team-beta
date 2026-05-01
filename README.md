@@ -28,9 +28,25 @@ changes.)
 
 ## How to use
 
-Open the URL together, on one screen or two, and start a session. The flow
-walks you through prompts side by side; both of you answer; you end with a
-shared summary.
+1. Open the URL together on one device and tap **Start a session**.
+2. Pop in both partners' names so the prompts and summary can address each
+   of you.
+3. Step through six structured prompts about near-term decisions, what
+   feels good and uncertain, a hypothetical windfall, a recurring expense
+   to revisit, the year ahead, and how each of you grew up with money.
+   Each prompt has two labelled answer boxes — one per partner — and you
+   can leave either or both empty. **Back** and **Next** carry your
+   answers with you; nothing is final until you say so.
+4. End on a shared summary of all six prompts. Use **Save as PDF** to
+   trigger your browser's print dialogue and choose "Save as PDF" as the
+   destination — that's how you keep a copy. Skipped prompts stay in the
+   summary marked *(skipped)* so you can see what you passed over.
+
+The whole sitting takes ten to fifteen minutes for two people.
+
+**Privacy.** Common Ground runs entirely in your browser. Answers live in
+`sessionStorage` only — they are never sent to a server. Closing the tab
+clears everything, and the saved PDF stays on your device.
 
 > Common Ground does not provide financial, tax, legal, or investment
 > advice. It is a tool to help you talk to each other.
