@@ -1,7 +1,8 @@
 // Common Ground — single-Worker product. Two routes only:
 //   GET /          → landing page
-//   GET /session   → three-screen, single-device session flow
-//                    (setup → six prompts with progress + back/next → summary)
+//   GET /session   → four-screen, single-device session flow
+//                    (setup → six prompts with progress + back/next →
+//                     reflection → summary)
 // State lives entirely in the browser (sessionStorage). No fetches carry
 // answer text. There is no other server-side route.
 
@@ -286,6 +287,149 @@ const sharedStyles = `
     font-size: 0.95rem;
     margin: 0 0 1.5rem;
   }
+  .reflection-intro {
+    color: var(--fg);
+    margin: 0 0 1rem;
+  }
+  .reflection-hint {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0 0 1.75rem;
+  }
+  .reflection-row {
+    border: 1px solid var(--rule);
+    background: var(--field-bg);
+    border-radius: 0.5rem;
+    padding: 1rem 1.1rem;
+    margin: 0 0 1rem;
+  }
+  .reflection-row .row-prompt {
+    margin: 0 0 0.85rem;
+    font-size: 1rem;
+    color: var(--fg);
+  }
+  .reflection-row .row-prompt .row-index {
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .reflection-tags {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  @media (min-width: 36rem) {
+    .reflection-tags {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .reflection-tag {
+    border: 1px solid var(--field-border);
+    border-radius: 0.4rem;
+    padding: 0.6rem 0.7rem;
+    background: var(--bg);
+  }
+  .reflection-tag label.toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--fg);
+    cursor: pointer;
+  }
+  .reflection-tag input[type="checkbox"] {
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--accent);
+    margin: 0;
+  }
+  .reflection-tag .note-field {
+    margin-top: 0.55rem;
+  }
+  .reflection-tag .note-field label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+  .reflection-tag .note-field input {
+    width: 100%;
+    background: var(--field-bg);
+    color: var(--fg);
+    border: 1px solid var(--field-border);
+    border-radius: 0.3rem;
+    padding: 0.45rem 0.55rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+  }
+  .reflection-tag .note-field input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .revisit-section {
+    margin: 0 0 2rem;
+    padding: 1rem 1.1rem 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: 0.5rem;
+    background: var(--field-bg);
+  }
+  .revisit-section h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .revisit-section p.section-lede {
+    margin: 0 0 1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .revisit-item {
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .revisit-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  .revisit-item .revisit-prompt {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: var(--fg);
+  }
+  .revisit-item .revisit-prompt .revisit-index {
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-right: 0.35rem;
+  }
+  .revisit-item .tagged-by {
+    margin: 0 0 0.35rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .revisit-item .tagged-by strong {
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .revisit-item .revisit-note {
+    margin: 0.25rem 0 0;
+    font-size: 0.95rem;
+    color: var(--fg);
+    white-space: pre-wrap;
+  }
+  .revisit-item .revisit-note .note-by {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-right: 0.35rem;
+  }
   .privacy-note {
     margin-top: 1.75rem;
     font-size: 0.9rem;
@@ -338,7 +482,8 @@ const sharedStyles = `
     }
     /* Hide everything except the summary screen. */
     #step-setup,
-    #step-prompt {
+    #step-prompt,
+    #step-reflection {
       display: none !important;
     }
     /* Hide interactive chrome inside the summary screen. */
@@ -376,6 +521,39 @@ const sharedStyles = `
     .summary-prompt .prompt-text {
       overflow-wrap: anywhere;
       word-wrap: break-word;
+    }
+    .revisit-section {
+      border: 1px solid #999999;
+      background: #ffffff;
+      margin: 0 0 1.25rem;
+      padding: 0.65rem 0.85rem 0.85rem;
+      page-break-inside: avoid;
+    }
+    .revisit-section h2 {
+      color: #000000;
+      font-size: 11pt;
+      margin: 0 0 0.35rem;
+    }
+    .revisit-section p.section-lede {
+      color: #444444;
+      font-size: 9.5pt;
+      margin: 0 0 0.6rem;
+    }
+    .revisit-item {
+      border-bottom: 1px solid #999999;
+      page-break-inside: avoid;
+    }
+    .revisit-item .revisit-prompt,
+    .revisit-item .revisit-note {
+      color: #000000;
+      font-size: 11pt;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+    }
+    .revisit-item .tagged-by,
+    .revisit-item .revisit-note .note-by {
+      color: #444444;
+      font-size: 10pt;
     }
     .print-footer {
       margin-top: 1.5rem;
@@ -448,11 +626,13 @@ const landingHtml = `<!doctype html>
 </html>
 `;
 
-// The session page is one HTML document with three sections (.step). A
+// The session page is one HTML document with four sections (.step). A
 // small inlined script swaps which section is active, walks through the
-// six prompts with progress + back/next preserving answers, persists state
-// to sessionStorage, and triggers window.print() for the saveable summary.
-// No network calls. No third-party JS.
+// six prompts with progress + back/next preserving answers, then a
+// reflection screen (tag prompts as "worth revisiting" with optional one-
+// line notes), then the summary. State persists in sessionStorage. The
+// summary's "Worth coming back to" section appears at the top whenever
+// any prompt has been tagged. No network calls. No third-party JS.
 const sessionScript = `
   (function () {
     var STORAGE_KEY = "common-ground.session.v1";
@@ -468,6 +648,7 @@ const sessionScript = `
     var steps = {
       setup: document.getElementById("step-setup"),
       prompt: document.getElementById("step-prompt"),
+      reflection: document.getElementById("step-reflection"),
       summary: document.getElementById("step-summary")
     };
     var nameAEl = document.getElementById("name-a");
@@ -482,9 +663,14 @@ const sessionScript = `
     var beginBtn = document.getElementById("begin-btn");
     var backBtn = document.getElementById("back-btn");
     var nextBtn = document.getElementById("next-btn");
+    var reflectionListEl = document.getElementById("reflection-list");
+    var reflectionBackBtn = document.getElementById("reflection-back-btn");
+    var reflectionNextBtn = document.getElementById("reflection-next-btn");
     var restartLink = document.getElementById("restart-link");
     var printBtn = document.getElementById("print-btn");
     var summaryListEl = document.getElementById("summary-list");
+    var revisitSectionEl = document.getElementById("revisit-section");
+    var revisitListEl = document.getElementById("revisit-list");
     var summaryNamesEl = document.getElementById("summary-names");
     var summaryDateEl = document.getElementById("summary-date");
     var printDateEl = document.getElementById("print-date");
@@ -493,10 +679,17 @@ const sessionScript = `
     // promptIndex is the zero-based pointer into PROMPTS. answers is a
     // sparse array of { a, b } objects, one per prompt index. Empty entries
     // are allowed at every step — skipping is a feature.
+    // tags is one entry per prompt index: { a: { tagged: bool, note: string },
+    // b: { tagged: bool, note: string } }. Both partners default to off.
     var promptIndex = 0;
     var answers = [];
+    var tags = [];
     for (var i = 0; i < TOTAL; i++) {
       answers.push({ a: "", b: "" });
+      tags.push({
+        a: { tagged: false, note: "" },
+        b: { tagged: false, note: "" }
+      });
     }
 
     function readState() {
@@ -518,6 +711,7 @@ const sessionScript = `
         nameA: nameAEl.value || "",
         nameB: nameBEl.value || "",
         answers: answers,
+        tags: tags,
         resolvedNames: currentNames()
       };
       try {
@@ -578,6 +772,25 @@ const sessionScript = `
           }
         }
       }
+      if (Array.isArray(state.tags)) {
+        for (var t = 0; t < TOTAL; t++) {
+          var tagEntry = state.tags[t];
+          if (tagEntry && typeof tagEntry === "object") {
+            var aSide = tagEntry.a && typeof tagEntry.a === "object" ? tagEntry.a : {};
+            var bSide = tagEntry.b && typeof tagEntry.b === "object" ? tagEntry.b : {};
+            tags[t] = {
+              a: {
+                tagged: Boolean(aSide.tagged),
+                note: typeof aSide.note === "string" ? aSide.note : ""
+              },
+              b: {
+                tagged: Boolean(bSide.tagged),
+                note: typeof bSide.note === "string" ? bSide.note : ""
+              }
+            };
+          }
+        }
+      }
       if (typeof state.promptIndex === "number" && state.promptIndex >= 0 && state.promptIndex < TOTAL) {
         promptIndex = state.promptIndex;
       }
@@ -613,9 +826,10 @@ const sessionScript = `
         backBtn.removeAttribute("hidden");
         backBtn.disabled = false;
       }
-      // Next button reads "See summary" on the final prompt.
+      // Next button reads "Reflect" on the final prompt — the reflection
+      // screen sits between prompt 6 and the summary.
       if (promptIndex === TOTAL - 1) {
-        nextBtn.textContent = "See summary";
+        nextBtn.textContent = "Reflect";
       } else {
         nextBtn.textContent = "Next";
       }
@@ -644,6 +858,165 @@ const sessionScript = `
         .replace(/'/g, "&#39;");
     }
 
+    function renderReflection() {
+      var names = currentNames();
+      var html = "";
+      for (var i = 0; i < TOTAL; i++) {
+        var tagEntry = tags[i] || {
+          a: { tagged: false, note: "" },
+          b: { tagged: false, note: "" }
+        };
+        var aTagged = Boolean(tagEntry.a && tagEntry.a.tagged);
+        var bTagged = Boolean(tagEntry.b && tagEntry.b.tagged);
+        var aNote = (tagEntry.a && tagEntry.a.note) || "";
+        var bNote = (tagEntry.b && tagEntry.b.note) || "";
+        html += '<article class="reflection-row" data-index="' + i + '">' +
+          '<p class="row-prompt">' +
+            '<span class="row-index">Prompt ' + (i + 1) + ' of ' + TOTAL + '</span>' +
+            escapeHtml(PROMPTS[i]) +
+          '</p>' +
+          '<div class="reflection-tags">' +
+            '<div class="reflection-tag" data-side="a">' +
+              '<label class="toggle">' +
+                '<input type="checkbox" data-tag-input="a" data-index="' + i + '"' + (aTagged ? ' checked' : '') + ' />' +
+                '<span data-tag-label="a">Worth revisiting for ' + escapeHtml(names.a) + '</span>' +
+              '</label>' +
+              '<div class="note-field" data-note-field="a"' + (aTagged ? '' : ' hidden') + '>' +
+                '<label for="note-a-' + i + '">One-line note (optional)</label>' +
+                '<input id="note-a-' + i + '" type="text" data-note-input="a" data-index="' + i + '" maxlength="160" value="' + escapeHtml(aNote) + '" />' +
+              '</div>' +
+            '</div>' +
+            '<div class="reflection-tag" data-side="b">' +
+              '<label class="toggle">' +
+                '<input type="checkbox" data-tag-input="b" data-index="' + i + '"' + (bTagged ? ' checked' : '') + ' />' +
+                '<span data-tag-label="b">Worth revisiting for ' + escapeHtml(names.b) + '</span>' +
+              '</label>' +
+              '<div class="note-field" data-note-field="b"' + (bTagged ? '' : ' hidden') + '>' +
+                '<label for="note-b-' + i + '">One-line note (optional)</label>' +
+                '<input id="note-b-' + i + '" type="text" data-note-input="b" data-index="' + i + '" maxlength="160" value="' + escapeHtml(bNote) + '" />' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</article>';
+      }
+      reflectionListEl.innerHTML = html;
+    }
+
+    function onReflectionTagChange(event) {
+      var target = event.target;
+      if (!target) {
+        return;
+      }
+      var side = target.getAttribute("data-tag-input");
+      var idxStr = target.getAttribute("data-index");
+      if (!side || idxStr === null) {
+        return;
+      }
+      var idx = parseInt(idxStr, 10);
+      if (isNaN(idx) || idx < 0 || idx >= TOTAL) {
+        return;
+      }
+      var tagEntry = tags[idx];
+      if (!tagEntry || !tagEntry[side]) {
+        return;
+      }
+      tagEntry[side].tagged = Boolean(target.checked);
+      // Show/hide the note field based on tag state. Existing note text is
+      // preserved in memory and storage even when hidden, so re-tagging
+      // restores it.
+      var row = target.closest(".reflection-row");
+      if (row) {
+        var noteField = row.querySelector(
+          '[data-note-field="' + side + '"]'
+        );
+        if (noteField) {
+          if (target.checked) {
+            noteField.removeAttribute("hidden");
+          } else {
+            noteField.setAttribute("hidden", "");
+          }
+        }
+      }
+      writeState({});
+    }
+
+    function onReflectionNoteInput(event) {
+      var target = event.target;
+      if (!target) {
+        return;
+      }
+      var side = target.getAttribute("data-note-input");
+      var idxStr = target.getAttribute("data-index");
+      if (!side || idxStr === null) {
+        return;
+      }
+      var idx = parseInt(idxStr, 10);
+      if (isNaN(idx) || idx < 0 || idx >= TOTAL) {
+        return;
+      }
+      var tagEntry = tags[idx];
+      if (!tagEntry || !tagEntry[side]) {
+        return;
+      }
+      tagEntry[side].note = target.value || "";
+      writeState({});
+    }
+
+    function renderRevisit() {
+      var names = currentNames();
+      var anyTagged = false;
+      var html = "";
+      for (var i = 0; i < TOTAL; i++) {
+        var tagEntry = tags[i] || {
+          a: { tagged: false, note: "" },
+          b: { tagged: false, note: "" }
+        };
+        var aTagged = Boolean(tagEntry.a && tagEntry.a.tagged);
+        var bTagged = Boolean(tagEntry.b && tagEntry.b.tagged);
+        if (!aTagged && !bTagged) {
+          continue;
+        }
+        anyTagged = true;
+        var taggedNames = [];
+        if (aTagged) {
+          taggedNames.push(escapeHtml(names.a));
+        }
+        if (bTagged) {
+          taggedNames.push(escapeHtml(names.b));
+        }
+        var notesHtml = "";
+        var aNote = aTagged ? ((tagEntry.a.note || "").trim()) : "";
+        var bNote = bTagged ? ((tagEntry.b.note || "").trim()) : "";
+        if (aNote !== "") {
+          notesHtml += '<p class="revisit-note">' +
+            '<span class="note-by">' + escapeHtml(names.a) + ':</span>' +
+            escapeHtml(aNote) +
+          '</p>';
+        }
+        if (bNote !== "") {
+          notesHtml += '<p class="revisit-note">' +
+            '<span class="note-by">' + escapeHtml(names.b) + ':</span>' +
+            escapeHtml(bNote) +
+          '</p>';
+        }
+        html += '<div class="revisit-item" data-index="' + i + '">' +
+          '<p class="revisit-prompt">' +
+            '<span class="revisit-index">Prompt ' + (i + 1) + '</span>' +
+            escapeHtml(PROMPTS[i]) +
+          '</p>' +
+          '<p class="tagged-by">Tagged by <strong>' + taggedNames.join("</strong> and <strong>") + '</strong></p>' +
+          notesHtml +
+        '</div>';
+      }
+      if (anyTagged) {
+        revisitListEl.innerHTML = html;
+        revisitSectionEl.removeAttribute("hidden");
+      } else {
+        revisitListEl.innerHTML = "";
+        revisitSectionEl.setAttribute("hidden", "");
+      }
+    }
+
     function renderSummary() {
       var names = currentNames();
       var dateText = formatToday();
@@ -655,6 +1028,7 @@ const sessionScript = `
       if (printDateEl) {
         printDateEl.textContent = dateText;
       }
+      renderRevisit();
       var html = "";
       for (var i = 0; i < TOTAL; i++) {
         var entry = answers[i] || { a: "", b: "" };
@@ -727,8 +1101,8 @@ const sessionScript = `
         loadPromptAtIndex();
       } else {
         writeState({});
-        renderSummary();
-        show("summary");
+        renderReflection();
+        show("reflection");
       }
     });
 
@@ -737,8 +1111,13 @@ const sessionScript = `
       clearState();
       promptIndex = 0;
       answers = [];
+      tags = [];
       for (var i = 0; i < TOTAL; i++) {
         answers.push({ a: "", b: "" });
+        tags.push({
+          a: { tagged: false, note: "" },
+          b: { tagged: false, note: "" }
+        });
       }
       nameAEl.value = "";
       nameBEl.value = "";
@@ -747,6 +1126,37 @@ const sessionScript = `
       updateLabelsFromNames();
       show("setup");
     });
+
+    if (reflectionListEl) {
+      reflectionListEl.addEventListener("change", function (event) {
+        if (event.target && event.target.matches('input[data-tag-input]')) {
+          onReflectionTagChange(event);
+        }
+      });
+      reflectionListEl.addEventListener("input", function (event) {
+        if (event.target && event.target.matches('input[data-note-input]')) {
+          onReflectionNoteInput(event);
+        }
+      });
+    }
+
+    if (reflectionBackBtn) {
+      reflectionBackBtn.addEventListener("click", function () {
+        // Return to prompt 6 with all answers and tagging state preserved.
+        promptIndex = TOTAL - 1;
+        writeState({});
+        loadPromptAtIndex();
+        show("prompt");
+      });
+    }
+
+    if (reflectionNextBtn) {
+      reflectionNextBtn.addEventListener("click", function () {
+        writeState({});
+        renderSummary();
+        show("summary");
+      });
+    }
 
     if (printBtn) {
       printBtn.addEventListener("click", function () {
@@ -835,6 +1245,29 @@ const sessionHtml = `<!doctype html>
         </p>
       </section>
 
+      <section id="step-reflection" class="step" data-active="false" aria-labelledby="reflection-heading">
+        <h1 id="reflection-heading">Anything to come back to?</h1>
+        <p class="reflection-intro">
+          Before the summary, take a moment together. Tag any prompts that
+          either of you would like to revisit later in the week — and add a
+          one-line note if it helps. Skipping the lot is a feature; the
+          conversation does not need a homework list.
+        </p>
+        <p class="reflection-hint">
+          Each of you decides for yourselves. The other partner's tag does
+          not change yours.
+        </p>
+        <div id="reflection-list"></div>
+        <div class="nav-row">
+          <button id="reflection-back-btn" class="secondary" type="button">Back</button>
+          <button id="reflection-next-btn" class="cta" type="button">See summary</button>
+        </div>
+        <p class="privacy-note">
+          Tags and notes stay on this device alongside your answers. Nothing
+          is sent anywhere.
+        </p>
+      </section>
+
       <section id="step-summary" class="step" data-active="false" aria-labelledby="summary-heading">
         <div class="print-only">
           <p class="eyebrow">Common Ground</p>
@@ -856,6 +1289,14 @@ const sessionHtml = `<!doctype html>
           <button id="print-btn" class="cta" type="button">Save as PDF</button>
           <a id="restart-link" class="secondary" href="#restart">Start a new session</a>
         </div>
+        <section id="revisit-section" class="revisit-section" hidden aria-labelledby="revisit-heading">
+          <h2 id="revisit-heading">Worth coming back to</h2>
+          <p class="section-lede">
+            The prompts each of you flagged to revisit later, in the order
+            they came up.
+          </p>
+          <div id="revisit-list"></div>
+        </section>
         <div id="summary-list"></div>
         <p class="privacy-note no-print">
           The Save as PDF button uses your browser's print dialogue —
