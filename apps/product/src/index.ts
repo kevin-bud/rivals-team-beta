@@ -5,8 +5,8 @@
 //   GET /session                → defaults to the open arc
 // State lives entirely in the browser (sessionStorage) under the key
 // `common-ground.session.v2`, an object keyed by arc id so each arc has its
-// own answers/tags/notes/takeaways — no leakage between arcs. There is no
-// other server-side route. No fetches carry answer text.
+// own per-partner data — no leakage between arcs. There is no other
+// server-side route. No fetches carry answer text.
 
 type ArcId = "open" | "purchase";
 
@@ -34,7 +34,7 @@ const ARCS: ReadonlyArray<Arc> = [
       "Six broad prompts about how money sits in your household — near-term decisions, what feels good and uncertain, the year ahead.",
     setupHeading: "Who is here?",
     setupLede:
-      "Pop in your names so the prompts and summary can address each of you. Both partners share this device for the sitting.",
+      "Pop in your names so the prompts and summary can address each of you. Two to four of you can sit at one device for the conversation — add a partner if you need a third or fourth row.",
     prompts: [
       "What's one money decision coming up in the next three months that affects both of you?",
       "When you think about money in your household right now, what feels good — and what feels uncertain?",
@@ -53,7 +53,7 @@ const ARCS: ReadonlyArray<Arc> = [
       "Five focused prompts for a household weighing a specific purchase — what it costs, what it changes, what you'd trade.",
     setupHeading: "Who is here?",
     setupLede:
-      "Pop in your names so the prompts and summary can address each of you. Both partners share this device for the sitting.",
+      "Pop in your names so the prompts and summary can address each of you. Two to four of you can sit at one device for the conversation — add a partner if you need a third or fourth row.",
     prompts: [
       "What is the purchase, and roughly how much are we talking about?",
       "What would having it actually change about your day-to-day, in a sentence each?",
@@ -311,13 +311,49 @@ const sharedStyles = `
     outline: 2px solid var(--accent);
     outline-offset: 1px;
   }
+  .partner-row {
+    position: relative;
+  }
+  .partner-row .partner-row-inner {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  .partner-row .partner-row-inner .field {
+    flex: 1;
+    margin-bottom: 0;
+  }
+  .partner-row .remove-partner-btn {
+    align-self: flex-end;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--field-border);
+    border-radius: 0.4rem;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
+  .partner-row .remove-partner-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .add-partner-row {
+    margin: 0 0 1.25rem;
+  }
   .answers {
     display: grid;
     grid-template-columns: 1fr;
     gap: 1.25rem;
   }
   @media (min-width: 36rem) {
-    .answers {
+    .answers[data-count="2"] {
+      grid-template-columns: 1fr 1fr;
+    }
+    .answers[data-count="3"],
+    .answers[data-count="4"] {
       grid-template-columns: 1fr 1fr;
     }
   }
@@ -457,7 +493,11 @@ const sharedStyles = `
     gap: 0.85rem;
   }
   @media (min-width: 36rem) {
-    .reflection-tags {
+    .reflection-tags[data-count="2"] {
+      grid-template-columns: 1fr 1fr;
+    }
+    .reflection-tags[data-count="3"],
+    .reflection-tags[data-count="4"] {
       grid-template-columns: 1fr 1fr;
     }
   }
@@ -577,7 +617,11 @@ const sharedStyles = `
     margin: 0 0 1rem;
   }
   @media (min-width: 36rem) {
-    .takeaways-form {
+    .takeaways-form[data-count="2"] {
+      grid-template-columns: 1fr 1fr;
+    }
+    .takeaways-form[data-count="3"],
+    .takeaways-form[data-count="4"] {
       grid-template-columns: 1fr 1fr;
     }
   }
@@ -836,7 +880,8 @@ const landingHtml = `<!doctype html>
         </p>
         <p class="together">
           Built for two or more people in a household to use side by side on
-          one device — not a dashboard for one person to log in to alone.
+          one device — two to four of you can sit at it together, no
+          dashboard for one person to log in to alone.
         </p>
         <p class="privacy-note">
           Your answers stay on this device — nothing is sent to a server.
@@ -857,7 +902,7 @@ const landingHtml = `<!doctype html>
           <li>A closing reflection — anything to come back to, anything to take forward.</li>
           <li>A shared summary, on screen and saveable as a PDF.</li>
         </ul>
-        <p class="cta-note">One device, two people, no sign-up.</p>
+        <p class="cta-note">One device, two to four people, no sign-up.</p>
       </section>
 
       ${advisoryFooter}
@@ -866,16 +911,39 @@ const landingHtml = `<!doctype html>
 </html>
 `;
 
-// The session page is one HTML document with four sections (.step). A
+// The session page is one HTML document with five sections (.step). A
 // small inlined script swaps which section is active, walks through the
 // chosen arc's prompts with progress + back/next preserving answers, then
 // the reflection screen (tag prompts as "worth revisiting" with optional
-// one-line notes), then the summary. State persists in sessionStorage
-// under `common-ground.session.v2`, an object keyed by arc id so the two
-// arcs never share answers/tags/notes. No network calls. No third-party JS.
+// one-line notes), then the take-aways step, then the summary. State
+// persists in sessionStorage under `common-ground.session.v2`, an object
+// keyed by arc id so the two arcs never share answers/tags/notes/take-aways.
+// No network calls. No third-party JS.
+//
+// Partner count is variable: 2 to 4. The setup screen has an "Add a
+// partner" affordance and a per-row remove for rows 3+. Per-arc state
+// holds `partners` (length-N array of names), `answers`, `tags`, `notes`
+// indexed `[promptIndex][partnerIndex]`, and `takeaways` indexed
+// `[partnerIndex]`. The eleven prompt wordings are unchanged across
+// partner counts — see decision-log entry 2026-05-01 07:05.
 const sessionScript = `
   (function () {
     var STORAGE_KEY = "common-ground.session.v2";
+    var MIN_PARTNERS = 2;
+    var MAX_PARTNERS = 4;
+    var LETTERS = ["a", "b", "c", "d"];
+    function letterFor(idx) {
+      return LETTERS[idx] || ("p" + idx);
+    }
+    function indexFor(letter) {
+      for (var i = 0; i < LETTERS.length; i++) {
+        if (LETTERS[i] === letter) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
     var promptsTag = document.getElementById("prompts-data");
     var arcMeta = { id: "open", name: "An open conversation", shortName: "open conversation" };
     var PROMPTS = [];
@@ -902,25 +970,20 @@ const sessionScript = `
       takeaways: document.getElementById("step-takeaways"),
       summary: document.getElementById("step-summary")
     };
-    var nameAEl = document.getElementById("name-a");
-    var nameBEl = document.getElementById("name-b");
-    var answerAEl = document.getElementById("answer-a");
-    var answerBEl = document.getElementById("answer-b");
-    var labelAEl = document.getElementById("label-a");
-    var labelBEl = document.getElementById("label-b");
+
+    var partnersListEl = document.getElementById("partners-list");
+    var addPartnerBtn = document.getElementById("add-partner-btn");
     var promptTextEl = document.getElementById("prompt-text");
     var progressTextEl = document.getElementById("progress-text");
     var progressBarFillEl = document.getElementById("progress-bar-fill");
     var beginBtn = document.getElementById("begin-btn");
     var backBtn = document.getElementById("back-btn");
     var nextBtn = document.getElementById("next-btn");
+    var answersListEl = document.getElementById("answers-list");
     var reflectionListEl = document.getElementById("reflection-list");
     var reflectionBackBtn = document.getElementById("reflection-back-btn");
     var reflectionNextBtn = document.getElementById("reflection-next-btn");
-    var takeawayAEl = document.getElementById("takeaway-a");
-    var takeawayBEl = document.getElementById("takeaway-b");
-    var takeawayLabelAEl = document.getElementById("takeaway-label-a");
-    var takeawayLabelBEl = document.getElementById("takeaway-label-b");
+    var takeawaysFormEl = document.getElementById("takeaways-form");
     var takeawayBackBtn = document.getElementById("takeaway-back-btn");
     var takeawayNextBtn = document.getElementById("takeaway-next-btn");
     var takeawaysSectionEl = document.getElementById("takeaways-section");
@@ -935,43 +998,65 @@ const sessionScript = `
     var printDateEl = document.getElementById("print-date");
     var printNamesEl = document.getElementById("print-names");
 
-    // promptIndex is the zero-based pointer into PROMPTS. answers is a
-    // sparse array of { a, b } objects, one per prompt index. Empty entries
-    // are allowed at every step — skipping is a feature.
-    // tags is one entry per prompt index: { a: { tagged: bool, note: string },
-    // b: { tagged: bool, note: string } }. Both partners default to off.
+    // Per-arc state. partnerCount is 2..4. partners is the names array.
+    // answers/tags/notes are arrays of length TOTAL where each entry is a
+    // length-partnerCount array. takeaways is a length-partnerCount array.
+    var partnerCount = 2;
+    var partners = ["", ""];
     var promptIndex = 0;
     var answers = [];
     var tags = [];
-    // Per-arc take-aways: one short string per partner. Both blank means the
-    // summary omits the take-aways section entirely.
-    var takeaways = { a: "", b: "" };
-    // Per-arc summary date: captured once when the summary is first reached
-    // and reused on subsequent renders/prints. Stored as an ISO string;
-    // formatted at render time. Empty until first capture.
+    var notes = [];
+    var takeaways = ["", ""];
     var summaryDate = "";
-    function emptyArcSlots() {
+
+    function emptyArcSlots(count) {
+      var n = count || 2;
       var newAnswers = [];
       var newTags = [];
+      var newNotes = [];
       for (var i = 0; i < TOTAL; i++) {
-        newAnswers.push({ a: "", b: "" });
-        newTags.push({
-          a: { tagged: false, note: "" },
-          b: { tagged: false, note: "" }
-        });
+        var ansRow = [];
+        var tagRow = [];
+        var noteRow = [];
+        for (var j = 0; j < n; j++) {
+          ansRow.push("");
+          tagRow.push(false);
+          noteRow.push("");
+        }
+        newAnswers.push(ansRow);
+        newTags.push(tagRow);
+        newNotes.push(noteRow);
+      }
+      var newTakeaways = [];
+      var newPartners = [];
+      for (var k = 0; k < n; k++) {
+        newTakeaways.push("");
+        newPartners.push("");
       }
       return {
+        partnerCount: n,
+        partners: newPartners,
         answers: newAnswers,
         tags: newTags,
-        takeaways: { a: "", b: "" },
+        notes: newNotes,
+        takeaways: newTakeaways,
         summaryDate: ""
       };
     }
-    var initial = emptyArcSlots();
-    answers = initial.answers;
-    tags = initial.tags;
-    takeaways = initial.takeaways;
-    summaryDate = initial.summaryDate;
+
+    function resetToEmpty(count) {
+      var slots = emptyArcSlots(count);
+      partnerCount = slots.partnerCount;
+      partners = slots.partners.slice();
+      answers = slots.answers;
+      tags = slots.tags;
+      notes = slots.notes;
+      takeaways = slots.takeaways.slice();
+      summaryDate = slots.summaryDate;
+    }
+
+    resetToEmpty(2);
 
     function readRoot() {
       try {
@@ -992,20 +1077,43 @@ const sessionScript = `
       return entry && typeof entry === "object" ? entry : null;
     }
 
+    function readPartnerNamesFromInputs() {
+      var out = [];
+      for (var i = 0; i < partnerCount; i++) {
+        var input = document.getElementById("name-" + letterFor(i));
+        out.push(input ? (input.value || "") : (partners[i] || ""));
+      }
+      return out;
+    }
+
+    function syncPartnersFromInputs() {
+      partners = readPartnerNamesFromInputs();
+    }
+
     function writeArcState(extraStep) {
       var root = readRoot();
       var stepName = extraStep || ((root[ARC_ID] && root[ARC_ID].step) || "setup");
-      root[ARC_ID] = {
+      var liveNames = readPartnerNamesFromInputs();
+      partners = liveNames;
+      var resolved = currentNames();
+      var entry = {
         step: stepName,
         promptIndex: promptIndex,
-        nameA: nameAEl.value || "",
-        nameB: nameBEl.value || "",
+        partnerCount: partnerCount,
+        partners: partners.slice(),
         answers: answers,
         tags: tags,
-        takeaways: { a: takeaways.a || "", b: takeaways.b || "" },
+        notes: notes,
+        takeaways: takeaways.slice(),
         summaryDate: summaryDate || "",
-        resolvedNames: currentNames()
+        resolvedNames: resolved
       };
+      // Back-compat aliases for existing N=2 readers/tests. These mirror
+      // the canonical fields above; the canonical source of truth is the
+      // arrays. Only present when N >= 2 (always true).
+      entry.nameA = partners[0] || "";
+      entry.nameB = partners[1] || "";
+      root[ARC_ID] = entry;
       try {
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(root));
       } catch (err) {
@@ -1029,10 +1137,50 @@ const sessionScript = `
       }
     }
 
+    // Resolve display names for a given count of partners. Empty inputs
+    // fall back to "Partner N". The first two also fall back to legacy
+    // "You" / "Your partner" so the existing two-partner copy reads the
+    // same when both names are blank — matching prior behaviour.
+    function fallbackName(idx) {
+      if (partnerCount === 2) {
+        if (idx === 0) {
+          return "You";
+        }
+        if (idx === 1) {
+          return "Your partner";
+        }
+      }
+      return "Partner " + (idx + 1);
+    }
+
     function currentNames() {
-      var a = (nameAEl.value || "").trim() || "You";
-      var b = (nameBEl.value || "").trim() || "Your partner";
-      return { a: a, b: b };
+      var resolved = [];
+      var live = readPartnerNamesFromInputs();
+      for (var i = 0; i < partnerCount; i++) {
+        var raw = (live[i] || "").trim();
+        resolved.push(raw === "" ? fallbackName(i) : raw);
+      }
+      return resolved;
+    }
+
+    // Build a British-English conjunction list, no Oxford comma.
+    //   ["A"]               → "A"
+    //   ["A","B"]           → "A and B"
+    //   ["A","B","C"]       → "A, B and C"
+    //   ["A","B","C","D"]   → "A, B, C and D"
+    function joinNames(names) {
+      var n = names.length;
+      if (n === 0) {
+        return "";
+      }
+      if (n === 1) {
+        return names[0];
+      }
+      if (n === 2) {
+        return names[0] + " and " + names[1];
+      }
+      var head = names.slice(0, n - 1).join(", ");
+      return head + " and " + names[n - 1];
     }
 
     function show(stepName) {
@@ -1050,88 +1198,174 @@ const sessionScript = `
       }
     }
 
-    function rehydrate() {
-      var state = readArcState();
-      if (!state) {
+    // ----- Setup screen: dynamic partner rows. -----
+
+    function renderPartnerRows() {
+      var html = "";
+      for (var i = 0; i < partnerCount; i++) {
+        var letter = letterFor(i);
+        var labelText = i === 0
+          ? "Your name"
+          : (i === 1 ? "Your partner's name" : "Partner " + (i + 1) + "'s name");
+        var placeholder = i === 0 ? "You" : (i === 1 ? "Your partner" : "Partner " + (i + 1));
+        var removeBtn = i >= 2
+          ? '<button type="button" class="remove-partner-btn" data-remove-index="' + i + '" aria-label="Remove ' + escapeHtml(placeholder) + '">Remove</button>'
+          : "";
+        html += '<div class="partner-row field" data-partner-index="' + i + '">' +
+          '<div class="partner-row-inner">' +
+            '<div class="field" style="margin-bottom:0;">' +
+              '<label for="name-' + letter + '">' + escapeHtml(labelText) + '</label>' +
+              '<input id="name-' + letter + '" type="text" autocomplete="off" placeholder="' + escapeHtml(placeholder) + '" data-partner-input="' + i + '" value="' + escapeHtml(partners[i] || "") + '" />' +
+            '</div>' +
+            removeBtn +
+          '</div>' +
+        '</div>';
+      }
+      partnersListEl.innerHTML = html;
+      // Wire up listeners on the new inputs and remove buttons.
+      var inputs = partnersListEl.querySelectorAll('input[data-partner-input]');
+      for (var k = 0; k < inputs.length; k++) {
+        (function (input) {
+          input.addEventListener("input", function () {
+            syncPartnersFromInputs();
+            writeArcState();
+          });
+        })(inputs[k]);
+      }
+      var removes = partnersListEl.querySelectorAll(".remove-partner-btn");
+      for (var r = 0; r < removes.length; r++) {
+        (function (btn) {
+          btn.addEventListener("click", function () {
+            var idx = parseInt(btn.getAttribute("data-remove-index") || "-1", 10);
+            removePartnerAtIndex(idx);
+          });
+        })(removes[r]);
+      }
+      updateAddPartnerVisibility();
+    }
+
+    function updateAddPartnerVisibility() {
+      if (!addPartnerBtn) {
         return;
       }
-      if (typeof state.nameA === "string") {
-        nameAEl.value = state.nameA;
+      if (partnerCount >= MAX_PARTNERS) {
+        addPartnerBtn.setAttribute("hidden", "");
+        addPartnerBtn.disabled = true;
+      } else {
+        addPartnerBtn.removeAttribute("hidden");
+        addPartnerBtn.disabled = false;
       }
-      if (typeof state.nameB === "string") {
-        nameBEl.value = state.nameB;
-      }
-      if (Array.isArray(state.answers)) {
-        for (var i = 0; i < TOTAL; i++) {
-          var entry = state.answers[i];
-          if (entry && typeof entry === "object") {
-            answers[i] = {
-              a: typeof entry.a === "string" ? entry.a : "",
-              b: typeof entry.b === "string" ? entry.b : ""
-            };
-          }
-        }
-      }
-      if (Array.isArray(state.tags)) {
-        for (var t = 0; t < TOTAL; t++) {
-          var tagEntry = state.tags[t];
-          if (tagEntry && typeof tagEntry === "object") {
-            var aSide = tagEntry.a && typeof tagEntry.a === "object" ? tagEntry.a : {};
-            var bSide = tagEntry.b && typeof tagEntry.b === "object" ? tagEntry.b : {};
-            tags[t] = {
-              a: {
-                tagged: Boolean(aSide.tagged),
-                note: typeof aSide.note === "string" ? aSide.note : ""
-              },
-              b: {
-                tagged: Boolean(bSide.tagged),
-                note: typeof bSide.note === "string" ? bSide.note : ""
-              }
-            };
-          }
-        }
-      }
-      if (typeof state.promptIndex === "number" && state.promptIndex >= 0 && state.promptIndex < TOTAL) {
-        promptIndex = state.promptIndex;
-      }
-      if (state.takeaways && typeof state.takeaways === "object") {
-        takeaways = {
-          a: typeof state.takeaways.a === "string" ? state.takeaways.a : "",
-          b: typeof state.takeaways.b === "string" ? state.takeaways.b : ""
-        };
-      }
-      if (typeof state.summaryDate === "string") {
-        summaryDate = state.summaryDate;
-      }
-      // Default to setup on reload — restarting the page should not skip ahead.
     }
 
-    function updateLabelsFromNames() {
+    function addPartner() {
+      if (partnerCount >= MAX_PARTNERS) {
+        return;
+      }
+      syncPartnersFromInputs();
+      partnerCount += 1;
+      partners.push("");
+      // Extend each per-prompt row by one slot.
+      for (var i = 0; i < TOTAL; i++) {
+        if (!answers[i]) {
+          answers[i] = [];
+        }
+        if (!tags[i]) {
+          tags[i] = [];
+        }
+        if (!notes[i]) {
+          notes[i] = [];
+        }
+        while (answers[i].length < partnerCount) {
+          answers[i].push("");
+        }
+        while (tags[i].length < partnerCount) {
+          tags[i].push(false);
+        }
+        while (notes[i].length < partnerCount) {
+          notes[i].push("");
+        }
+      }
+      while (takeaways.length < partnerCount) {
+        takeaways.push("");
+      }
+      renderPartnerRows();
+      writeArcState();
+    }
+
+    function removePartnerAtIndex(idx) {
+      if (idx < 2 || idx >= partnerCount) {
+        return;
+      }
+      syncPartnersFromInputs();
+      partners.splice(idx, 1);
+      partnerCount -= 1;
+      for (var i = 0; i < TOTAL; i++) {
+        if (Array.isArray(answers[i]) && idx < answers[i].length) {
+          answers[i].splice(idx, 1);
+        }
+        if (Array.isArray(tags[i]) && idx < tags[i].length) {
+          tags[i].splice(idx, 1);
+        }
+        if (Array.isArray(notes[i]) && idx < notes[i].length) {
+          notes[i].splice(idx, 1);
+        }
+      }
+      if (idx < takeaways.length) {
+        takeaways.splice(idx, 1);
+      }
+      renderPartnerRows();
+      writeArcState();
+    }
+
+    // ----- Prompt screen: dynamic answer textareas. -----
+
+    function renderAnswerInputs() {
+      var html = "";
       var names = currentNames();
-      labelAEl.textContent = names.a + "'s answer";
-      labelBEl.textContent = names.b + "'s answer";
-      if (takeawayLabelAEl) {
-        takeawayLabelAEl.textContent = names.a;
+      for (var i = 0; i < partnerCount; i++) {
+        var letter = letterFor(i);
+        html += '<div class="field">' +
+          '<label id="label-' + letter + '" for="answer-' + letter + '">' + escapeHtml(names[i]) + "'s answer" + '</label>' +
+          '<textarea id="answer-' + letter + '" rows="6" data-answer-index="' + i + '"></textarea>' +
+        '</div>';
       }
-      if (takeawayLabelBEl) {
-        takeawayLabelBEl.textContent = names.b;
+      answersListEl.innerHTML = html;
+      answersListEl.setAttribute("data-count", String(partnerCount));
+      var textareas = answersListEl.querySelectorAll("textarea[data-answer-index]");
+      for (var t = 0; t < textareas.length; t++) {
+        (function (ta) {
+          ta.addEventListener("input", function () {
+            captureCurrentAnswers();
+            writeArcState();
+          });
+        })(textareas[t]);
       }
     }
 
-    function rehydrateTakeawayInputs() {
-      if (takeawayAEl) {
-        takeawayAEl.value = takeaways.a || "";
-      }
-      if (takeawayBEl) {
-        takeawayBEl.value = takeaways.b || "";
+    function updatePromptLabels() {
+      var names = currentNames();
+      for (var i = 0; i < partnerCount; i++) {
+        var letter = letterFor(i);
+        var labelEl = document.getElementById("label-" + letter);
+        if (labelEl) {
+          labelEl.textContent = names[i] + "'s answer";
+        }
       }
     }
 
     function captureCurrentAnswers() {
-      answers[promptIndex] = {
-        a: answerAEl.value || "",
-        b: answerBEl.value || ""
-      };
+      var row = answers[promptIndex] || [];
+      for (var i = 0; i < partnerCount; i++) {
+        var ta = document.getElementById("answer-" + letterFor(i));
+        row[i] = ta ? (ta.value || "") : (row[i] || "");
+      }
+      while (row.length < partnerCount) {
+        row.push("");
+      }
+      if (row.length > partnerCount) {
+        row.length = partnerCount;
+      }
+      answers[promptIndex] = row;
     }
 
     function loadPromptAtIndex() {
@@ -1139,9 +1373,20 @@ const sessionScript = `
       progressTextEl.textContent = "Prompt " + (promptIndex + 1) + " of " + TOTAL + " — " + arcMeta.name;
       var pct = TOTAL > 0 ? ((promptIndex + 1) / TOTAL) * 100 : 0;
       progressBarFillEl.style.width = pct + "%";
-      var entry = answers[promptIndex] || { a: "", b: "" };
-      answerAEl.value = entry.a || "";
-      answerBEl.value = entry.b || "";
+      var entry = answers[promptIndex];
+      if (!Array.isArray(entry)) {
+        entry = [];
+        answers[promptIndex] = entry;
+      }
+      while (entry.length < partnerCount) {
+        entry.push("");
+      }
+      for (var i = 0; i < partnerCount; i++) {
+        var ta = document.getElementById("answer-" + letterFor(i));
+        if (ta) {
+          ta.value = entry[i] || "";
+        }
+      }
       // Back button: hidden on prompt 1.
       if (promptIndex === 0) {
         backBtn.setAttribute("hidden", "");
@@ -1150,14 +1395,71 @@ const sessionScript = `
         backBtn.removeAttribute("hidden");
         backBtn.disabled = false;
       }
-      // Next button reads "Reflect" on the final prompt — the reflection
-      // screen sits between the last prompt and the summary.
+      // Next button reads "Reflect" on the final prompt.
       if (promptIndex === TOTAL - 1) {
         nextBtn.textContent = "Reflect";
       } else {
         nextBtn.textContent = "Next";
       }
-      updateLabelsFromNames();
+      updatePromptLabels();
+    }
+
+    // ----- Take-aways screen. -----
+
+    function renderTakeawayInputs() {
+      var html = "";
+      var names = currentNames();
+      for (var i = 0; i < partnerCount; i++) {
+        var letter = letterFor(i);
+        html += '<div class="field">' +
+          '<label for="takeaway-' + letter + '"><span id="takeaway-label-' + letter + '">' + escapeHtml(names[i]) + '</span></label>' +
+          '<input id="takeaway-' + letter + '" type="text" autocomplete="off" maxlength="240" data-takeaway-index="' + i + '" />' +
+        '</div>';
+      }
+      takeawaysFormEl.innerHTML = html;
+      takeawaysFormEl.setAttribute("data-count", String(partnerCount));
+      var inputs = takeawaysFormEl.querySelectorAll("input[data-takeaway-index]");
+      for (var k = 0; k < inputs.length; k++) {
+        (function (inp) {
+          inp.addEventListener("input", function () {
+            var idx = parseInt(inp.getAttribute("data-takeaway-index") || "-1", 10);
+            if (idx >= 0 && idx < partnerCount) {
+              takeaways[idx] = inp.value || "";
+              writeArcState();
+            }
+          });
+        })(inputs[k]);
+      }
+    }
+
+    function rehydrateTakeawayInputs() {
+      var names = currentNames();
+      for (var i = 0; i < partnerCount; i++) {
+        var letter = letterFor(i);
+        var inp = document.getElementById("takeaway-" + letter);
+        if (inp) {
+          inp.value = takeaways[i] || "";
+        }
+        var lbl = document.getElementById("takeaway-label-" + letter);
+        if (lbl) {
+          lbl.textContent = names[i];
+        }
+      }
+    }
+
+    function captureTakeawaysFromInputs() {
+      for (var i = 0; i < partnerCount; i++) {
+        var inp = document.getElementById("takeaway-" + letterFor(i));
+        if (inp) {
+          takeaways[i] = inp.value || "";
+        }
+      }
+      while (takeaways.length < partnerCount) {
+        takeaways.push("");
+      }
+      if (takeaways.length > partnerCount) {
+        takeaways.length = partnerCount;
+      }
     }
 
     function formatStoredDate(iso) {
@@ -1181,10 +1483,6 @@ const sessionScript = `
       }
     }
 
-    // Capture the date once when the summary is first reached for this arc.
-    // Subsequent visits to the summary (Back/Next, restart-and-redo, print
-    // later) reuse the stored ISO so the rendered date never silently
-    // changes underneath a household.
     function captureSummaryDateIfNeeded() {
       if (!summaryDate) {
         summaryDate = new Date().toISOString();
@@ -1192,26 +1490,12 @@ const sessionScript = `
       }
     }
 
-    // Build the partners' names line for the metadata block. British
-    // English: "and" between names, never an ampersand. The defensive
-    // single-name case (one input filled, one blank) renders just the
-    // filled name without the conjunction.
+    // Build the partners' names line for the summary metadata block.
+    // British English: "and" between names, no Oxford comma. Fallback
+    // labels are used when an individual name is blank.
     function partnerNamesLine() {
-      var rawA = (nameAEl.value || "").trim();
-      var rawB = (nameBEl.value || "").trim();
-      if (rawA !== "" && rawB !== "") {
-        return rawA + " and " + rawB;
-      }
-      if (rawA !== "") {
-        return rawA;
-      }
-      if (rawB !== "") {
-        return rawB;
-      }
-      // Both blank — fall back to the placeholder pair so the metadata is
-      // never missing entirely. A completed session always has both names.
-      var fallback = currentNames();
-      return fallback.a + " and " + fallback.b;
+      var names = currentNames();
+      return joinNames(names);
     }
 
     function escapeHtml(value) {
@@ -1227,40 +1511,31 @@ const sessionScript = `
       var names = currentNames();
       var html = "";
       for (var i = 0; i < TOTAL; i++) {
-        var tagEntry = tags[i] || {
-          a: { tagged: false, note: "" },
-          b: { tagged: false, note: "" }
-        };
-        var aTagged = Boolean(tagEntry.a && tagEntry.a.tagged);
-        var bTagged = Boolean(tagEntry.b && tagEntry.b.tagged);
-        var aNote = (tagEntry.a && tagEntry.a.note) || "";
-        var bNote = (tagEntry.b && tagEntry.b.note) || "";
+        var rowTags = Array.isArray(tags[i]) ? tags[i] : [];
+        var rowNotes = Array.isArray(notes[i]) ? notes[i] : [];
+        var tagsHtml = "";
+        for (var p = 0; p < partnerCount; p++) {
+          var letter = letterFor(p);
+          var tagged = Boolean(rowTags[p]);
+          var note = rowNotes[p] || "";
+          tagsHtml += '<div class="reflection-tag" data-side="' + letter + '" data-partner-index="' + p + '">' +
+            '<label class="toggle">' +
+              '<input type="checkbox" data-tag-input="' + letter + '" data-partner-index="' + p + '" data-index="' + i + '"' + (tagged ? ' checked' : '') + ' />' +
+              '<span data-tag-label="' + letter + '">Worth revisiting for ' + escapeHtml(names[p]) + '</span>' +
+            '</label>' +
+            '<div class="note-field" data-note-field="' + letter + '" data-partner-index="' + p + '"' + (tagged ? '' : ' hidden') + '>' +
+              '<label for="note-' + letter + '-' + i + '">One-line note (optional)</label>' +
+              '<input id="note-' + letter + '-' + i + '" type="text" data-note-input="' + letter + '" data-partner-index="' + p + '" data-index="' + i + '" maxlength="160" value="' + escapeHtml(note) + '" />' +
+            '</div>' +
+          '</div>';
+        }
         html += '<article class="reflection-row" data-index="' + i + '">' +
           '<p class="row-prompt">' +
             '<span class="row-index">Prompt ' + (i + 1) + ' of ' + TOTAL + '</span>' +
             escapeHtml(PROMPTS[i]) +
           '</p>' +
-          '<div class="reflection-tags">' +
-            '<div class="reflection-tag" data-side="a">' +
-              '<label class="toggle">' +
-                '<input type="checkbox" data-tag-input="a" data-index="' + i + '"' + (aTagged ? ' checked' : '') + ' />' +
-                '<span data-tag-label="a">Worth revisiting for ' + escapeHtml(names.a) + '</span>' +
-              '</label>' +
-              '<div class="note-field" data-note-field="a"' + (aTagged ? '' : ' hidden') + '>' +
-                '<label for="note-a-' + i + '">One-line note (optional)</label>' +
-                '<input id="note-a-' + i + '" type="text" data-note-input="a" data-index="' + i + '" maxlength="160" value="' + escapeHtml(aNote) + '" />' +
-              '</div>' +
-            '</div>' +
-            '<div class="reflection-tag" data-side="b">' +
-              '<label class="toggle">' +
-                '<input type="checkbox" data-tag-input="b" data-index="' + i + '"' + (bTagged ? ' checked' : '') + ' />' +
-                '<span data-tag-label="b">Worth revisiting for ' + escapeHtml(names.b) + '</span>' +
-              '</label>' +
-              '<div class="note-field" data-note-field="b"' + (bTagged ? '' : ' hidden') + '>' +
-                '<label for="note-b-' + i + '">One-line note (optional)</label>' +
-                '<input id="note-b-' + i + '" type="text" data-note-input="b" data-index="' + i + '" maxlength="160" value="' + escapeHtml(bNote) + '" />' +
-              '</div>' +
-            '</div>' +
+          '<div class="reflection-tags" data-count="' + partnerCount + '">' +
+            tagsHtml +
           '</div>' +
         '</article>';
       }
@@ -1272,27 +1547,32 @@ const sessionScript = `
       if (!target) {
         return;
       }
-      var side = target.getAttribute("data-tag-input");
+      var pIdxStr = target.getAttribute("data-partner-index");
       var idxStr = target.getAttribute("data-index");
-      if (!side || idxStr === null) {
+      if (pIdxStr === null || idxStr === null) {
         return;
       }
+      var pIdx = parseInt(pIdxStr, 10);
       var idx = parseInt(idxStr, 10);
+      if (isNaN(pIdx) || pIdx < 0 || pIdx >= partnerCount) {
+        return;
+      }
       if (isNaN(idx) || idx < 0 || idx >= TOTAL) {
         return;
       }
-      var tagEntry = tags[idx];
-      if (!tagEntry || !tagEntry[side]) {
-        return;
+      if (!Array.isArray(tags[idx])) {
+        tags[idx] = [];
       }
-      tagEntry[side].tagged = Boolean(target.checked);
-      // Show/hide the note field based on tag state. Existing note text is
-      // preserved in memory and storage even when hidden, so re-tagging
-      // restores it.
+      while (tags[idx].length < partnerCount) {
+        tags[idx].push(false);
+      }
+      tags[idx][pIdx] = Boolean(target.checked);
+      // Show/hide the note field for that partner only. Existing note
+      // text stays in memory and storage; toggling tag back on restores it.
       var row = target.closest(".reflection-row");
       if (row) {
         var noteField = row.querySelector(
-          '[data-note-field="' + side + '"]'
+          '[data-note-field][data-partner-index="' + pIdx + '"]'
         );
         if (noteField) {
           if (target.checked) {
@@ -1310,20 +1590,26 @@ const sessionScript = `
       if (!target) {
         return;
       }
-      var side = target.getAttribute("data-note-input");
+      var pIdxStr = target.getAttribute("data-partner-index");
       var idxStr = target.getAttribute("data-index");
-      if (!side || idxStr === null) {
+      if (pIdxStr === null || idxStr === null) {
         return;
       }
+      var pIdx = parseInt(pIdxStr, 10);
       var idx = parseInt(idxStr, 10);
+      if (isNaN(pIdx) || pIdx < 0 || pIdx >= partnerCount) {
+        return;
+      }
       if (isNaN(idx) || idx < 0 || idx >= TOTAL) {
         return;
       }
-      var tagEntry = tags[idx];
-      if (!tagEntry || !tagEntry[side]) {
-        return;
+      if (!Array.isArray(notes[idx])) {
+        notes[idx] = [];
       }
-      tagEntry[side].note = target.value || "";
+      while (notes[idx].length < partnerCount) {
+        notes[idx].push("");
+      }
+      notes[idx][pIdx] = target.value || "";
       writeArcState();
     }
 
@@ -1332,44 +1618,50 @@ const sessionScript = `
       var anyTagged = false;
       var html = "";
       for (var i = 0; i < TOTAL; i++) {
-        var tagEntry = tags[i] || {
-          a: { tagged: false, note: "" },
-          b: { tagged: false, note: "" }
-        };
-        var aTagged = Boolean(tagEntry.a && tagEntry.a.tagged);
-        var bTagged = Boolean(tagEntry.b && tagEntry.b.tagged);
-        if (!aTagged && !bTagged) {
+        var rowTags = Array.isArray(tags[i]) ? tags[i] : [];
+        var rowNotes = Array.isArray(notes[i]) ? notes[i] : [];
+        var taggedNames = [];
+        var notesHtml = "";
+        for (var p = 0; p < partnerCount; p++) {
+          if (rowTags[p]) {
+            anyTagged = true;
+            taggedNames.push(names[p]);
+            var note = (rowNotes[p] || "").trim();
+            if (note !== "") {
+              notesHtml += '<p class="revisit-note">' +
+                '<span class="note-by">' + escapeHtml(names[p]) + ':</span>' +
+                escapeHtml(note) +
+              '</p>';
+            }
+          }
+        }
+        if (taggedNames.length === 0) {
           continue;
         }
-        anyTagged = true;
-        var taggedNames = [];
-        if (aTagged) {
-          taggedNames.push(escapeHtml(names.a));
-        }
-        if (bTagged) {
-          taggedNames.push(escapeHtml(names.b));
-        }
-        var notesHtml = "";
-        var aNote = aTagged ? ((tagEntry.a.note || "").trim()) : "";
-        var bNote = bTagged ? ((tagEntry.b.note || "").trim()) : "";
-        if (aNote !== "") {
-          notesHtml += '<p class="revisit-note">' +
-            '<span class="note-by">' + escapeHtml(names.a) + ':</span>' +
-            escapeHtml(aNote) +
-          '</p>';
-        }
-        if (bNote !== "") {
-          notesHtml += '<p class="revisit-note">' +
-            '<span class="note-by">' + escapeHtml(names.b) + ':</span>' +
-            escapeHtml(bNote) +
-          '</p>';
+        // Build "Tagged by <strong>X</strong> and <strong>Y</strong>" using
+        // the British conjunction join.
+        var taggedByHtml;
+        if (taggedNames.length === 1) {
+          taggedByHtml = '<strong>' + escapeHtml(taggedNames[0]) + '</strong>';
+        } else if (taggedNames.length === 2) {
+          taggedByHtml = '<strong>' + escapeHtml(taggedNames[0]) + '</strong> and <strong>' + escapeHtml(taggedNames[1]) + '</strong>';
+        } else {
+          // Three or more: comma-separate up to the penultimate, then "and".
+          var head = "";
+          for (var t = 0; t < taggedNames.length - 1; t++) {
+            head += '<strong>' + escapeHtml(taggedNames[t]) + '</strong>';
+            if (t < taggedNames.length - 2) {
+              head += ', ';
+            }
+          }
+          taggedByHtml = head + ' and <strong>' + escapeHtml(taggedNames[taggedNames.length - 1]) + '</strong>';
         }
         html += '<div class="revisit-item" data-index="' + i + '">' +
           '<p class="revisit-prompt">' +
             '<span class="revisit-index">Prompt ' + (i + 1) + '</span>' +
             escapeHtml(PROMPTS[i]) +
           '</p>' +
-          '<p class="tagged-by">Tagged by <strong>' + taggedNames.join("</strong> and <strong>") + '</strong></p>' +
+          '<p class="tagged-by">Tagged by ' + taggedByHtml + '</p>' +
           notesHtml +
         '</div>';
       }
@@ -1387,27 +1679,24 @@ const sessionScript = `
         return;
       }
       var names = currentNames();
-      var aText = (takeaways.a || "").trim();
-      var bText = (takeaways.b || "").trim();
-      if (aText === "" && bText === "") {
+      var anyText = false;
+      var html = "";
+      for (var i = 0; i < partnerCount; i++) {
+        var text = (takeaways[i] || "").trim();
+        if (text === "") {
+          continue;
+        }
+        anyText = true;
+        var letter = letterFor(i);
+        html += '<div class="takeaway-item" data-side="' + letter + '" data-partner-index="' + i + '">' +
+          '<span class="takeaway-by"><strong>' + escapeHtml(names[i]) + '</strong></span>' +
+          '<p class="takeaway-text">' + escapeHtml(text) + '</p>' +
+        '</div>';
+      }
+      if (!anyText) {
         takeawaysListEl.innerHTML = "";
         takeawaysSectionEl.setAttribute("hidden", "");
         return;
-      }
-      var html = "";
-      // Fixed order: partner A first, partner B second — the order they were
-      // entered at setup. Stable across runs.
-      if (aText !== "") {
-        html += '<div class="takeaway-item" data-side="a">' +
-          '<span class="takeaway-by"><strong>' + escapeHtml(names.a) + '</strong></span>' +
-          '<p class="takeaway-text">' + escapeHtml(aText) + '</p>' +
-        '</div>';
-      }
-      if (bText !== "") {
-        html += '<div class="takeaway-item" data-side="b">' +
-          '<span class="takeaway-by"><strong>' + escapeHtml(names.b) + '</strong></span>' +
-          '<p class="takeaway-text">' + escapeHtml(bText) + '</p>' +
-        '</div>';
       }
       takeawaysListEl.innerHTML = html;
       takeawaysSectionEl.removeAttribute("hidden");
@@ -1429,54 +1718,204 @@ const sessionScript = `
       renderTakeaways();
       var html = "";
       for (var i = 0; i < TOTAL; i++) {
-        var entry = answers[i] || { a: "", b: "" };
-        var aText = (entry.a || "").trim();
-        var bText = (entry.b || "").trim();
-        var isSkipped = aText === "" && bText === "";
+        var entry = Array.isArray(answers[i]) ? answers[i] : [];
+        var trimmed = [];
+        var anyFilled = false;
+        for (var p = 0; p < partnerCount; p++) {
+          var t = (entry[p] || "").trim();
+          trimmed.push(t);
+          if (t !== "") {
+            anyFilled = true;
+          }
+        }
+        var isSkipped = !anyFilled;
         var blockClass = isSkipped ? "summary-prompt skipped" : "summary-prompt";
         var skippedTag = isSkipped
           ? ' <span class="skipped-tag">(skipped)</span>'
-          : "";
-        var aCell = aText === ""
-          ? '<p class="empty">(skipped)</p>'
-          : '<p>' + escapeHtml(aText) + '</p>';
-        var bCell = bText === ""
-          ? '<p class="empty">(skipped)</p>'
-          : '<p>' + escapeHtml(bText) + '</p>';
+          : '';
+        var blocksHtml = "";
+        for (var q = 0; q < partnerCount; q++) {
+          var cellText = trimmed[q];
+          var cell = cellText === ""
+            ? '<p class="empty">(skipped)</p>'
+            : '<p>' + escapeHtml(cellText) + '</p>';
+          blocksHtml += '<div class="summary-block">' +
+            '<h3>' + escapeHtml(names[q]) + '</h3>' +
+            cell +
+          '</div>';
+        }
         html += '<article class="' + blockClass + '" data-skipped="' + (isSkipped ? "true" : "false") + '">' +
           '<h2>Prompt ' + (i + 1) + ' of ' + TOTAL + skippedTag + '</h2>' +
           '<p class="prompt-text">' + escapeHtml(PROMPTS[i]) + '</p>' +
-          '<div class="answers">' +
-            '<div class="summary-block">' +
-              '<h3>' + escapeHtml(names.a) + '</h3>' +
-              aCell +
-            '</div>' +
-            '<div class="summary-block">' +
-              '<h3>' + escapeHtml(names.b) + '</h3>' +
-              bCell +
-            '</div>' +
+          '<div class="answers" data-count="' + partnerCount + '">' +
+            blocksHtml +
           '</div>' +
         '</article>';
       }
       summaryListEl.innerHTML = html;
     }
 
-    [nameAEl, nameBEl].forEach(function (el) {
-      el.addEventListener("input", function () {
-        writeArcState();
-        updateLabelsFromNames();
-      });
-    });
+    // ----- Rehydrate from sessionStorage. -----
 
-    [answerAEl, answerBEl].forEach(function (el) {
-      el.addEventListener("input", function () {
-        captureCurrentAnswers();
-        writeArcState();
+    function rehydrate() {
+      var state = readArcState();
+      if (!state) {
+        return;
+      }
+      // partnerCount: prefer the explicit count, fall back to inferring
+      // from the partners array (or legacy nameA/nameB pair).
+      var hydratedCount = 0;
+      if (typeof state.partnerCount === "number" && state.partnerCount >= MIN_PARTNERS && state.partnerCount <= MAX_PARTNERS) {
+        hydratedCount = state.partnerCount;
+      } else if (Array.isArray(state.partners) && state.partners.length >= MIN_PARTNERS) {
+        hydratedCount = Math.min(MAX_PARTNERS, state.partners.length);
+      } else {
+        hydratedCount = 2;
+      }
+      partnerCount = hydratedCount;
+
+      // partners array.
+      partners = [];
+      if (Array.isArray(state.partners)) {
+        for (var i = 0; i < partnerCount; i++) {
+          var v = state.partners[i];
+          partners.push(typeof v === "string" ? v : "");
+        }
+      } else {
+        // Legacy nameA/nameB.
+        var legacy0 = typeof state.nameA === "string" ? state.nameA : "";
+        var legacy1 = typeof state.nameB === "string" ? state.nameB : "";
+        partners.push(legacy0);
+        partners.push(legacy1);
+        while (partners.length < partnerCount) {
+          partners.push("");
+        }
+      }
+
+      // Re-shape the per-prompt arrays for the chosen count.
+      var freshAnswers = [];
+      var freshTags = [];
+      var freshNotes = [];
+      for (var pi = 0; pi < TOTAL; pi++) {
+        var a = [];
+        var t = [];
+        var n = [];
+        for (var pj = 0; pj < partnerCount; pj++) {
+          a.push("");
+          t.push(false);
+          n.push("");
+        }
+        freshAnswers.push(a);
+        freshTags.push(t);
+        freshNotes.push(n);
+      }
+
+      if (Array.isArray(state.answers)) {
+        for (var ai = 0; ai < TOTAL && ai < state.answers.length; ai++) {
+          var srcA = state.answers[ai];
+          if (Array.isArray(srcA)) {
+            for (var aj = 0; aj < partnerCount && aj < srcA.length; aj++) {
+              if (typeof srcA[aj] === "string") {
+                freshAnswers[ai][aj] = srcA[aj];
+              }
+            }
+          } else if (srcA && typeof srcA === "object") {
+            // Legacy {a,b} shape.
+            if (typeof srcA.a === "string") {
+              freshAnswers[ai][0] = srcA.a;
+            }
+            if (typeof srcA.b === "string" && partnerCount > 1) {
+              freshAnswers[ai][1] = srcA.b;
+            }
+          }
+        }
+      }
+
+      if (Array.isArray(state.tags)) {
+        for (var ti = 0; ti < TOTAL && ti < state.tags.length; ti++) {
+          var srcT = state.tags[ti];
+          if (Array.isArray(srcT)) {
+            for (var tj = 0; tj < partnerCount && tj < srcT.length; tj++) {
+              freshTags[ti][tj] = Boolean(srcT[tj]);
+            }
+          } else if (srcT && typeof srcT === "object") {
+            // Legacy {a:{tagged,note}, b:{tagged,note}}.
+            if (srcT.a && typeof srcT.a === "object") {
+              freshTags[ti][0] = Boolean(srcT.a.tagged);
+              if (typeof srcT.a.note === "string") {
+                freshNotes[ti][0] = srcT.a.note;
+              }
+            }
+            if (srcT.b && typeof srcT.b === "object" && partnerCount > 1) {
+              freshTags[ti][1] = Boolean(srcT.b.tagged);
+              if (typeof srcT.b.note === "string") {
+                freshNotes[ti][1] = srcT.b.note;
+              }
+            }
+          }
+        }
+      }
+
+      if (Array.isArray(state.notes)) {
+        for (var ni = 0; ni < TOTAL && ni < state.notes.length; ni++) {
+          var srcN = state.notes[ni];
+          if (Array.isArray(srcN)) {
+            for (var nj = 0; nj < partnerCount && nj < srcN.length; nj++) {
+              if (typeof srcN[nj] === "string") {
+                freshNotes[ni][nj] = srcN[nj];
+              }
+            }
+          }
+        }
+      }
+
+      answers = freshAnswers;
+      tags = freshTags;
+      notes = freshNotes;
+
+      // takeaways: array of length partnerCount.
+      var freshTakeaways = [];
+      for (var k = 0; k < partnerCount; k++) {
+        freshTakeaways.push("");
+      }
+      if (Array.isArray(state.takeaways)) {
+        for (var kk = 0; kk < partnerCount && kk < state.takeaways.length; kk++) {
+          if (typeof state.takeaways[kk] === "string") {
+            freshTakeaways[kk] = state.takeaways[kk];
+          }
+        }
+      } else if (state.takeaways && typeof state.takeaways === "object") {
+        // Legacy {a,b}.
+        if (typeof state.takeaways.a === "string") {
+          freshTakeaways[0] = state.takeaways.a;
+        }
+        if (typeof state.takeaways.b === "string" && partnerCount > 1) {
+          freshTakeaways[1] = state.takeaways.b;
+        }
+      }
+      takeaways = freshTakeaways;
+
+      if (typeof state.promptIndex === "number" && state.promptIndex >= 0 && state.promptIndex < TOTAL) {
+        promptIndex = state.promptIndex;
+      }
+      if (typeof state.summaryDate === "string") {
+        summaryDate = state.summaryDate;
+      }
+      // Default to setup on reload — restarting the page should not skip ahead.
+    }
+
+    // ----- Setup screen wiring. -----
+
+    if (addPartnerBtn) {
+      addPartnerBtn.addEventListener("click", function () {
+        addPartner();
       });
-    });
+    }
 
     beginBtn.addEventListener("click", function () {
+      syncPartnersFromInputs();
       promptIndex = 0;
+      renderAnswerInputs();
       writeArcState();
       loadPromptAtIndex();
       show("prompt");
@@ -1508,22 +1947,10 @@ const sessionScript = `
       event.preventDefault();
       clearArcState();
       promptIndex = 0;
-      var fresh = emptyArcSlots();
-      answers = fresh.answers;
-      tags = fresh.tags;
-      takeaways = fresh.takeaways;
-      summaryDate = fresh.summaryDate;
-      nameAEl.value = "";
-      nameBEl.value = "";
-      answerAEl.value = "";
-      answerBEl.value = "";
-      if (takeawayAEl) {
-        takeawayAEl.value = "";
-      }
-      if (takeawayBEl) {
-        takeawayBEl.value = "";
-      }
-      updateLabelsFromNames();
+      resetToEmpty(2);
+      renderPartnerRows();
+      renderAnswerInputs();
+      renderTakeawayInputs();
       show("setup");
     });
 
@@ -1542,7 +1969,6 @@ const sessionScript = `
 
     if (reflectionBackBtn) {
       reflectionBackBtn.addEventListener("click", function () {
-        // Return to the final prompt with all answers and tagging state preserved.
         promptIndex = TOTAL - 1;
         writeArcState();
         loadPromptAtIndex();
@@ -1553,34 +1979,15 @@ const sessionScript = `
     if (reflectionNextBtn) {
       reflectionNextBtn.addEventListener("click", function () {
         writeArcState();
+        renderTakeawayInputs();
         rehydrateTakeawayInputs();
-        updateLabelsFromNames();
         show("takeaways");
-      });
-    }
-
-    if (takeawayAEl) {
-      takeawayAEl.addEventListener("input", function () {
-        takeaways.a = takeawayAEl.value || "";
-        writeArcState();
-      });
-    }
-    if (takeawayBEl) {
-      takeawayBEl.addEventListener("input", function () {
-        takeaways.b = takeawayBEl.value || "";
-        writeArcState();
       });
     }
 
     if (takeawayBackBtn) {
       takeawayBackBtn.addEventListener("click", function () {
-        // Capture current input values before navigating away.
-        if (takeawayAEl) {
-          takeaways.a = takeawayAEl.value || "";
-        }
-        if (takeawayBEl) {
-          takeaways.b = takeawayBEl.value || "";
-        }
+        captureTakeawaysFromInputs();
         writeArcState();
         renderReflection();
         show("reflection");
@@ -1589,15 +1996,7 @@ const sessionScript = `
 
     if (takeawayNextBtn) {
       takeawayNextBtn.addEventListener("click", function () {
-        if (takeawayAEl) {
-          takeaways.a = takeawayAEl.value || "";
-        }
-        if (takeawayBEl) {
-          takeaways.b = takeawayBEl.value || "";
-        }
-        // Capture the session date once, the moment the summary is first
-        // reached for this arc. Reaching it again (Back from summary, then
-        // forward) is a no-op.
+        captureTakeawaysFromInputs();
         captureSummaryDateIfNeeded();
         writeArcState();
         renderSummary();
@@ -1607,16 +2006,18 @@ const sessionScript = `
 
     if (printBtn) {
       printBtn.addEventListener("click", function () {
-        // Re-render before printing in case names/answers changed since
-        // the summary was first opened.
         renderSummary();
         window.print();
       });
     }
 
+    // ----- Boot. -----
+
     rehydrate();
+    renderPartnerRows();
+    renderAnswerInputs();
+    renderTakeawayInputs();
     rehydrateTakeawayInputs();
-    updateLabelsFromNames();
     show("setup");
   })();
 `;
@@ -1655,13 +2056,9 @@ function buildSessionHtml(arc: Arc): string {
           ${arc.setupLede}
         </p>
         <p class="together">You're starting <strong>${arc.name}</strong>. <a href="/">Pick a different conversation</a>.</p>
-        <div class="field">
-          <label for="name-a">Your name</label>
-          <input id="name-a" type="text" autocomplete="off" placeholder="You" />
-        </div>
-        <div class="field">
-          <label for="name-b">Your partner's name</label>
-          <input id="name-b" type="text" autocomplete="off" placeholder="Your partner" />
+        <div id="partners-list"></div>
+        <div class="add-partner-row">
+          <button id="add-partner-btn" class="secondary" type="button">Add a partner</button>
         </div>
         <button id="begin-btn" class="cta" type="button">Begin</button>
         <p class="privacy-note">
@@ -1679,19 +2076,10 @@ function buildSessionHtml(arc: Arc): string {
         <p class="prompt" id="prompt-text"></p>
         <p class="together">
           Each of you answers in your own box. Short notes are fine — and
-          you can leave either box empty. This is a conversation starter,
+          you can leave any box empty. This is a conversation starter,
           not a form.
         </p>
-        <div class="answers">
-          <div class="field">
-            <label id="label-a" for="answer-a">Your answer</label>
-            <textarea id="answer-a" rows="6"></textarea>
-          </div>
-          <div class="field">
-            <label id="label-b" for="answer-b">Your partner's answer</label>
-            <textarea id="answer-b" rows="6"></textarea>
-          </div>
-        </div>
+        <div class="answers" id="answers-list" data-count="2"></div>
         <div class="nav-row">
           <button id="back-btn" class="secondary" type="button" hidden>Back</button>
           <button id="next-btn" class="cta" type="button">Next</button>
@@ -1705,13 +2093,13 @@ function buildSessionHtml(arc: Arc): string {
         <h1 id="reflection-heading">Anything to come back to?</h1>
         <p class="reflection-intro">
           Before the summary, take a moment together. Tag any prompts from
-          <strong>${arc.name}</strong> that either of you would like to revisit
+          <strong>${arc.name}</strong> that any of you would like to revisit
           later in the week — and add a one-line note if it helps. Skipping
           the lot is a feature; the conversation does not need a homework
           list.
         </p>
         <p class="reflection-hint">
-          Each of you decides for yourselves. The other partner's tag does
+          Each of you decides for yourselves. Another partner's tag does
           not change yours.
         </p>
         <div id="reflection-list"></div>
@@ -1731,16 +2119,7 @@ function buildSessionHtml(arc: Arc): string {
           A thought, a small thing to do this week, anything you each want
           to keep in mind. Skipping is fine.
         </p>
-        <div class="takeaways-form">
-          <div class="field">
-            <label for="takeaway-a"><span id="takeaway-label-a">You</span></label>
-            <input id="takeaway-a" type="text" autocomplete="off" maxlength="240" />
-          </div>
-          <div class="field">
-            <label for="takeaway-b"><span id="takeaway-label-b">Your partner</span></label>
-            <input id="takeaway-b" type="text" autocomplete="off" maxlength="240" />
-          </div>
-        </div>
+        <div class="takeaways-form" id="takeaways-form" data-count="2"></div>
         <div class="nav-row">
           <button id="takeaway-back-btn" class="secondary" type="button">Back</button>
           <button id="takeaway-next-btn" class="cta" type="button">See summary</button>

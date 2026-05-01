@@ -3,159 +3,217 @@
 Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 `Status` field as work progresses.
 
-**Task:** Tighten the landing-page copy. The landing has not been revisited since the MVP — three product beats since (closing reflection, second arc, take-aways) plus the printed-PDF metadata polish are unannounced on the landing surface. Editorial work only. No new flow, no new screens.
-**Assigned:** 2026-05-01 06:00
-**Status:** awaiting review
+**Task:** Generalise Common Ground to support **2 to 4 partners** at setup. The existing flow (setup → prompts → reflection → take-aways → summary → print) generalises to N partners. Cap at 4. The eleven prompt wordings stay unchanged.
+**Assigned:** 2026-05-01 07:15
+**Status:** in progress
 **Notes:**
 
 ## Context
 
-Printed-PDF metadata polish shipped (commit `1ee1ace`, Reviewer PASS,
-release note "Names and a date on the printed PDF" live). Fifth rival
-check — Roundtable still frozen, no new pull on direction. The binding
-decision for what comes next is in `coordination/decision-log.md`,
-entry **2026-05-01 05:30 "Accept printed-PDF metadata; queue (small)
-post + run fifth rival check"** (final paragraph). Read it for
-rationale.
+Iteration was paused at 06:40 with a retrospective post shipped. Then
+Roundtable shipped *"Two or more, taken at face value: Roundtable now
+seats 2–4"* and named the gap honestly: the brief reads "two or more
+adults" and neither team had honoured the "or more" half. We hadn't
+either. Decision-log entry **2026-05-01 07:05 "Reverse 06:40 wrap-up;
+honour the brief's 'two or more adults'"** is the binding decision —
+read it before starting. It explains why the reversal is in scope, why
+4 is the cap, and what we are *not* changing (architecture, prompts,
+arcs, anything else).
 
-The point of this slice: the landing page tells a reader Common Ground
-is about a household sitting down to talk about money — true, but it
-sells the product short. A reader landing today does not see that the
-product offers two named conversations, a closing reflection, a
-walk-away beat, and a saveable PDF. The arc-choice cards exist (from the
-second-arc slice) but the surrounding copy hasn't kept up. This is
-editorial polish: rewrite the value proposition, the supporting line(s),
-and any nearby copy so a first-time visitor understands the shape of a
-session before clicking. **No new product behaviour, no new screens, no
-new flow steps.**
+This will be the largest slice since the MVP. Tests need broad updates.
+The existing per-arc state shape becomes N-partner-aware. The current
+two-textarea side-by-side layout becomes N-textarea responsive layout.
+Be careful and methodical; the privacy posture and the eleven prompts
+must not regress.
 
 ## Definition of done
 
 All of the following must be true on the deployed URL,
-https://rivals-team-beta-product.kevin-wilson.workers.dev:
+https://rivals-team-beta-product.kevin-wilson.workers.dev, on **both**
+arcs (`/session?arc=open` and `/session?arc=purchase`):
 
-1. **Landing page copy is rewritten** to accurately reflect what the
-   product does now. The minimum surface that must change:
-   - The lede / value-proposition sentence near the top of the page.
-   - The supporting line(s) about who the product is for and how a
-     session actually works in shape (without becoming a manual).
-   - Any copy adjacent to the two arc-choice cards that contradicts or
-     undersells the current product.
+1. **Setup screen.**
+   - Two name inputs by default, labelled and individually editable
+     (current behaviour).
+   - An **"Add a partner"** button (or your wording — must remain
+     elicit-not-prescribe; no "Add a member", "Add a household member"
+     etc. that risks being read as advice). Pressing it adds a third
+     and (one more press) a fourth name input. The button hides /
+     disables when count reaches 4.
+   - A per-row **"Remove"** affordance on the third and fourth rows.
+     Removing collapses to the previous count. The first two rows
+     cannot be removed (minimum 2 partners).
+   - Empty names continue to be allowed at advance time. Default
+     fallback labels ("Partner 1", "Partner 2", "Partner 3", "Partner 4")
+     can be used in downstream UI when a partner's name is blank;
+     pick a fallback pattern that reads sensibly in British English.
+   - The setup-screen layout works at 375px width without horizontal
+     scroll at N=4.
 
-   You may also tighten:
-   - The arc-card descriptions if they feel thin.
-   - A short "What's in a session?" line or brief list near the cards
-     — at most one or two sentences, or a 3-bullet list with no
-     more than one short line per bullet (e.g. "Six prompts you
-     answer side by side. A reflection at the end. A summary you
-     can save."). Optional. Use only if it earns its place; do
-     not bloat.
+2. **Prompt screens.**
+   - `N` answer textareas per prompt, where N is the partner count
+     chosen at setup, labelled with each partner's name (or fallback
+     if blank).
+   - Side-by-side at desktop width when N=2; consider 2×2 grid or
+     stacked at N=3/4 — engineering judgement, must remain readable.
+   - At 375px width, all N textareas fit on the screen vertically
+     stacked without horizontal scroll.
+   - Skip-as-feature behaviour retained: empty answers continue to be
+     allowed and continue to render correctly downstream.
 
-2. **The advice disclaimer remains visible in the footer**, in
-   substance: "does not provide financial, tax, legal, or investment
-   advice". Wording can be polished but the line must be on the page.
+3. **Closing reflection ("Anything to come back to?").**
+   - `N` tag controls per prompt row (one per partner), each with the
+     partner's name (or fallback) as the label.
+   - The optional one-line note input is per-partner-per-prompt, only
+     visible/usable once that partner has tagged that prompt.
+   - At N=4, the row layout must remain readable — wrap to two
+     columns of partners is acceptable; do not shrink type or hide
+     names.
+   - Skipping the entire reflection still works as before.
 
-3. **The privacy posture is named on the landing**, in one short line.
-   The current landing does not say it; this is the right place to add
-   one sentence (e.g. "Your answers stay on this device — nothing is
-   sent to a server"). Engineer wording is fine within these
-   constraints: factually accurate, one sentence, plain, not a privacy
-   policy. Place it where it reads naturally — adjacent to the cards or
-   in a short subheading; not buried in microscopic legal type.
+4. **Take-aways step.**
+   - `N` single-line inputs, one per partner, labelled with their name
+     (or fallback). Stack vertically at narrow widths.
+   - All blank still produces a summary identical to the pre-take-aways
+     summary (no "Taking forward" section).
 
-4. **No new flow.** Clicking a card still takes the visitor to the
-   chosen arc's setup, exactly as today. No interstitial, no email
-   capture, no cookie banner, no "what's new" splash. The arc-choice
-   surface itself does not change shape — only copy on it may change.
+5. **Summary screen.**
+   - Each prompt row shows up to `N` answers labelled by partner name.
+     Empty answers continue to be omitted on a per-partner basis. The
+     existing "(skipped)" treatment for prompts where *all* partners
+     left empty remains.
+   - "Worth coming back to": tagged items appear in original prompt
+     order. The "tagged by" line uses British conjunction joining:
+     "Astrid and Bram" for two; "Astrid, Bram and Carla" for three;
+     "Astrid, Bram, Carla and Dev" for four. No Oxford comma. Notes
+     attached to tags continue to be labelled with the partner who
+     wrote them.
+   - "Taking forward": one row per partner with a non-empty take-away;
+     blank take-aways still produce no row. Order is consistent across
+     runs (engineer's call: setup-order is the natural choice).
+   - "Start a new session" continues to clear the entire arc state
+     (including partner count, names, and all per-partner data for
+     that arc).
 
-5. **The product does not change behaviour.** Both arcs continue to
-   walk the same setup → prompts → reflection → take-aways → summary
-   → print flow. Eleven prompts unchanged. Closing reflection,
-   take-aways, and printed-PDF metadata behaviour unchanged.
+6. **Print path.**
+   - Heading metadata block uses the same name-joining logic as the
+     summary's "tagged by" lines. No Oxford comma. Date format
+     unchanged (en-GB long form).
+   - All sections continue to print A4-clean at all N (no truncated
+     names, no horizontal overflow, no microscopic legal print).
+   - Per-arc print heading still names the arc.
 
-6. **Privacy posture preserved.** The served JS at `/`,
-   `/session?arc=open`, `/session?arc=purchase` still contains zero
-   `fetch(`/`XMLHttpRequest`/`sendBeacon` tokens. No new persistence.
-   No remote calls. (This slice is copy-only and should not touch any
-   of those, but verify after deploying.)
+7. **State.**
+   - Generalise the per-arc `common-ground.session.v2` shape to
+     N-partner: `partners` becomes an array of names of length 2–4;
+     `answers`, `tags`, `notes` become arrays-of-arrays indexed by
+     `[promptIndex][partnerIndex]`; `takeaways` becomes an array of
+     length N indexed by `[partnerIndex]`. Existing `summaryDate`
+     remains a single per-arc field.
+   - **Do not introduce a new top-level `sessionStorage` key.** Stay
+     under `common-ground.session.v2`.
+   - Per-arc isolation continues to hold across all generalised
+     fields.
 
-7. **British English.** All new copy. No Americanisms.
+8. **Per-arc isolation.** Walking the open arc with 3 partners and
+   then switching to the big-purchase arc from the landing must
+   produce a fresh setup for the big-purchase arc (default 2
+   partners, blank names, blank answers/tags/notes/take-aways). And
+   vice versa.
 
-8. **Mobile-readable.** The landing must continue to work at 375px
-   width without horizontal scroll. The two arc-choice cards must
-   continue to stack/wrap legibly.
+9. **Privacy posture preserved.**
+   - No new persistence beyond `sessionStorage`.
+   - Served JS at `/`, `/session?arc=open`, `/session?arc=purchase`
+     still contains zero `fetch(`/`XMLHttpRequest`/`sendBeacon` tokens.
+   - Network watch through both arcs end-to-end at N=2, N=3, and N=4
+     including the print click — zero non-GET requests.
 
-9. **The landing is not bloated.** A first-time visitor should still
-   reach the arc cards in one short scroll on desktop, maybe two on
-   mobile. If your draft pushes the cards meaningfully further down
-   the page, cut copy until it doesn't.
+10. **Eleven prompts unchanged.** Do not edit the wording of any of
+    the six open-arc prompts or the five big-purchase-arc prompts.
+    The phrase *"affects both of you"* in open prompt 1 is a
+    wording risk at N=3 or 4 but **the wording stays as-is** for
+    this slice — see the binding decision-log entry. We accept the
+    minor wording roughness in exchange for not opening a separate
+    rewriting cycle on locked prompts.
 
-10. **Tone and stance held throughout the new copy:**
-    - *Elicits, does not prescribe.* The landing should describe what a
-      session is, not promise outcomes. "Get on the same page about
-      money" — fine. "Make better financial decisions" — too close to
-      the line.
-    - *No outcome claims about agreement, harmony, alignment, "fixing"
-      money conversations, etc.* The product offers structure, not
-      results.
-    - *No example take-aways or example reflections.* If you mention
-      that the session ends with each partner naming what they're
-      taking from it, do not give an example sentence — that would
-      anchor what households write.
-    - *No mention of advice / advisors / coaches in any positive
-      sense* (other than the existing disclaimer that we are not one).
+11. **Landing copy.** A single short adjustment to the landing's
+    supporting line(s) so that a first-time visitor knows the product
+    supports two-to-four partners. Engineer wording is fine within
+    these constraints: factually accurate, plain, in keeping with the
+    landing's existing voice. Do not rewrite the lede; do not bloat
+    the page. The privacy line and advice disclaimer remain.
 
-11. **Tests.** Update Playwright assertions only as necessary to keep
-    the suite green against the new copy. **Do not delete tests
-    wholesale to make them pass.** If a landing-copy assertion no
-    longer matches because the wording changed, update the assertion
-    to match the new wording — but the *intent* of the assertion
-    (e.g. "the lede mentions household / together / money") must
-    still be enforceable. Add a small new spec or extend an existing
-    one to assert:
-    - The new lede mentions, in substance, that this is a tool for a
-      household to talk about money together.
-    - The privacy line you add is present on the landing.
-    - The advice disclaimer is still in the footer.
-    - The two arc-choice cards are still on the page with clearly
-      distinct labels for the two arcs.
-    - The number of `<h1>`/main-heading elements has not exploded —
-      i.e., you haven't restructured the page heading hierarchy.
+12. **British English** in all new copy. No Oxford comma in
+    name-joining. Fallback labels read sensibly in en-GB.
 
-12. **README** does not need changes for this slice unless the
-    "How to use" section's wording is genuinely contradicted by the
-    new landing copy. Default: no change.
+13. **Mobile-readable at 375px** at N=4 across setup, prompt,
+    reflection, take-aways, summary, and print. No horizontal
+    scroll anywhere; vertical stacking acceptable.
 
-13. `pnpm --filter product run deploy` succeeds. Verify the deployed
+14. **Tests.** Extend the Playwright suite, against the deployed URL.
+    The existing 100+ tests must continue passing — backward
+    compatibility at N=2 is the regression bar. New coverage:
+    - Setup adds and removes partners up to 4, down to 2.
+    - "Add a partner" button hides / disables at N=4.
+    - "Remove" affordance only present on rows 3+.
+    - Walking the full flow at N=3 on each arc produces a summary
+      with three labelled answers per prompt (omitting blanks per
+      partner) and a printable PDF that fits A4 with three names
+      in the heading joined by "and".
+    - Walking the full flow at N=4 on each arc produces a summary
+      with four labelled answers per prompt and a print heading
+      with four names joined "Astrid, Bram, Carla and Dev"-style.
+    - "Worth coming back to" tagged-by lines use British
+      name-joining at N=3 and N=4.
+    - "Taking forward" shows one row per non-empty take-away across
+      N partners.
+    - Per-arc isolation: open arc at N=3 → switch to purchase from
+      landing → purchase starts fresh at N=2 with blank names.
+    - Network watch at N=4 through the full flow including the
+      print click — zero non-GET requests.
+    - Existing N=2 specs (landing, session-flow, six-prompt-arc-
+      verifier, reflection, second-arc-verifier, take-aways,
+      printed-pdf-metadata, etc.) remain green without weakening
+      assertions.
+
+15. **README.** Update the "How to use" section so it reflects that
+    a household of two to four partners can use the product. One or
+    two sentences. Do not bloat. British English.
+
+16. `pnpm --filter product run deploy` succeeds. Verify the deployed
     URL with `curl` on the routes you use, and run the full Playwright
     suite against the deployed URL with
     `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev
-    pnpm --filter product run test:e2e`. Report the version id and
-    the test count. The full suite must remain green — no
-    regressions in the session flow.
+    pnpm --filter product run test:e2e`. Report version id and test
+    count.
 
-14. Append a fresh entry to `coordination/review-queue.md`: commit
-    SHA, deployed URL, version id, and an explicit Reviewer
-    checklist mapping item-by-item to the numbered DoD items above.
-    Include the new lede sentence verbatim in the queue entry so
-    the Reviewer can grep for it on the deployed URL.
+17. Append a fresh entry to `coordination/review-queue.md`: commit
+    SHA, deployed URL, version id, and an explicit Reviewer checklist
+    mapping item-by-item to the 17 numbered DoD items above.
 
 ## Constraints / scope guard rails
 
-- **Editorial only.** No new screens, no new flow, no new state, no
-  new persistence, no new fetches. If you find yourself writing a new
-  function for product behaviour, you have left the scope.
-- **No framework.** Same as before.
-- **No persistence beyond `sessionStorage`.** Same as before. This
-  slice should not touch state at all.
-- **No auth, no multi-device, no share-link.**
-- **No third arc, no extra prompts, no rephrasing of the existing
-  eleven prompts.**
-- **No advice, no examples of household answers, no scoring, no
-  outcome claims.**
+- **No framework.** Same as before. Source-file splitting under
+  `apps/product/src/` is fine if useful; deploy stays a single
+  Worker.
+- **No persistence beyond `sessionStorage`.** Privacy claim is now
+  public, demonstrable, and load-bearing on the landing. Do not
+  weaken it.
+- **No auth, no multi-device, no share-link.** Single-device-together
+  is the deliberate stance. Four people in one room is still
+  single-device.
+- **No third arc, no pacing affordances, no other expansion in this
+  slice.** Partner-count generalisation only.
+- **No edits to the eleven prompt wordings.** Including "affects both
+  of you" — see DoD item 10.
+- **No advice, no examples in any new partner-related copy, no
+  scoring or ranking, no recommended partner count.**
+- **British English** in all new copy. No Oxford comma in
+  name-joining lines.
 - **No blog post.** The Orchestrator queues posts at milestones; do
   not edit anything under `apps/blog/`.
 - **Do not edit `coordination/decision-log.md`** — Orchestrator only.
+- **Do not change the `common-ground.session.v2` top-level key.**
 
 ## When done
 

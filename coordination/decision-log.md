@@ -16,6 +16,137 @@ new entry that references the previous one.
 
 ---
 
+## 2026-05-01 07:05 — Reverse 06:40 wrap-up; honour the brief's "two or more adults"
+
+**Context:** Out-of-cycle seventh rival check (`coordination/rival-state.md` 07:00) verified a Roundtable post the Writer surfaced on hand-back: *"Two or more, taken at face value: Roundtable now seats 2–4."* They have generalised their product from two to two-three-or-four partners. Their own framing: *"Plurality went first because the brief said so plainly and we had not honoured it."* That is also true of Common Ground. The brief reads "A household of two or more adults"; our setup, prompt copy ("you and your partner"), and entire data model assume exactly two. We did not deliberately pick the two-only reading — we defaulted to it.
+
+**Choice:** Reverse the 06:40 "stop iterating" stance for one more slice. Generalise Common Ground to support **2 to 4 partners** at setup, with the existing flow (prompts, closing reflection, take-aways, summary, print) generalising to N-partner. Cap at 4 to match Roundtable's own bound and to keep the in-room experience tractable.
+
+**Rationale:**
+- *The brief's wording is plain and we did not honour it.* This is not a question of competing readings — "two or more adults" is unambiguous. A retrospective that did not address this would be incomplete; a product that does not address this *can* be incomplete and the retrospective will then read as confidence we have not earned. Honouring the brief is the higher commitment.
+- *The reversibility note in 06:40 was not rhetorical.* It said "if Roundtable ships something that genuinely calls for a response, iteration can resume." This is that case. Honouring the reversibility note is itself part of the decision trail the brief evaluates.
+- *We are not chasing on architecture.* Single-device, in-page state, side-by-side answering, two-arc library — all unchanged. Partner-count is a separate axis from the architectural divergences we have explicitly held. Generalising to 4 partners on one device is consistent with single-device-together; it is not a multi-device pivot.
+- *Cap at 4, not "unlimited".* Roundtable picked 2–4. Matching that bound is honest (we are not visibly outdoing them on a contrived axis), keeps the prompt-screen and reflection-screen layouts tractable, and reflects the practical bound of how many adults realistically sit around one device for a money conversation.
+- *The retrospective post stays as-is.* It was correct when it was written. The next post (after this slice ships) is where the partner-count work and the rival's role in surfacing the gap get acknowledged.
+
+**Reversible?** Yes — the partner-count parameter is data-driven; reverting to two-only is mechanically straightforward. We are not betting the architecture on this choice.
+
+**Working spec for the next task** (final shape locked in `current-task.md`):
+- *Setup screen.* Two name inputs by default, with an "Add a partner" button that adds a third / fourth name input (and removes via a per-row "Remove" affordance until count hits 2 again). Partner names remain editable. Empty names still allowed (current behaviour).
+- *Prompt screens.* `N` answer textareas per prompt, labelled with each partner's name (or a fallback like "Partner 1" if blank), arranged side-by-side at desktop width and stacking vertically at narrow widths. Existing skip-as-feature behaviour retained.
+- *Closing reflection.* `N` tag controls per prompt row (one per partner). Engineering judgement on layout when N > 2 — wrap to two columns is fine; do not collapse names or reduce visual weight.
+- *Take-aways step.* `N` single-line inputs, one per partner. Same skip-allowed behaviour.
+- *Summary screen.* Each prompt's row shows up to N answers labelled by name; empty answers still skipped per partner. "Worth coming back to" lists tagged-by names with British "and" / Oxford-comma-discretion handling for N=3 and N=4 (e.g. "Astrid and Bram", "Astrid, Bram and Carla", "Astrid, Bram, Carla and Dev"). "Taking forward" shows one row per partner with non-empty take-away. Tagged items remain in original prompt order; no scoring or ranking.
+- *Print path.* Heading metadata block uses the same name-joining logic. Layout still A4-clean at all N.
+- *Per-arc isolation.* Switching arcs from the landing still resets that arc's setup. Partner count is per-arc.
+- *State.* Generalise the per-arc `common-ground.session.v2` shape to N-partner: arrays of length N for `answers`, `tags`, `notes`, `takeaways`; the `partners` line becomes a list. No new top-level key.
+- *Eleven prompts unchanged.* The existing wording works at N partners as-is — *"What would each of you most want to be able to say?"* generalises naturally; *"What's one money decision coming up in the next three months that affects both of you?"* — the phrase "both of you" is a wording risk at N=3 or 4. **Acceptable risk for this slice — do not edit the locked prompt wording.** Engineer notes the phrase still parses sensibly; the brief's "or more" wording does not require us to rewrite all eleven prompts.
+- *Privacy posture, advice line, British English, mobile-readable, no framework, no persistence beyond `sessionStorage`* — all unchanged.
+- *No third arc, no pacing affordances, no other expansion in this slice.*
+
+**This will be the largest slice since the MVP.** Tests need broad updates. Set the engineer's expectation accordingly when writing the task: this is bigger than the recent consolidating slices.
+
+---
+
+## 2026-05-01 06:40 — Move from iteration to wrap-up; queue a retrospective post
+
+**Context:** Sixth rival check (`coordination/rival-state.md` 06:35) confirms Roundtable frozen for three consecutive rival-check windows. The 06:30 entry's provisional read — that the strongest remaining artefact is a retrospective engaging the brief's evaluation criteria, rather than a seventh code slice — now stands without competing pull from rival data.
+
+**Choice:**
+1. **Stop iterating on the product** for the rest of this run, unless the rival ships something that materially changes the picture. Both arcs work end-to-end, both close cleanly, the printed PDF is informative, the landing reflects the product, the privacy posture is demonstrable. There is no defensible next product slice that is not optional polish.
+2. **Queue a retrospective post**, separately from the small landing-copy release-note entry that is already in the queue. This is an Orchestrator-driven queue entry (not a PASS-triggered one — those only fire on Reviewer PASS). The retrospective is an editorial slot, not a code milestone.
+3. **Let the Writer choose** between (a) shipping both queue entries as separate posts (small release note + retrospective), (b) deferring the small one and shipping the retrospective alone, or (c) combining the small release note's content into the retrospective. The queue entries themselves spell out the options.
+
+**Rationale:**
+- *The brief's evaluation prompt is explicit.* "Not on which product is 'better'. The evaluation is comparative and process-focused: what bets, how decisions evolved, where you and the rival diverged, how you handled the regulated-advice line, what your decision trail shows." A retrospective post written *specifically* into those criteria is the strongest single artefact remaining. The decision log and rival-state are the raw material; the retrospective is the synthesis.
+- *Marginal value of further code slices is low.* Pacing affordances are cosmetic, a third arc would feel proliferative against the current two, and any further polish is below the threshold that justifies a Reviewer cycle. Continuing to ship for its own sake risks running into our own version of Roundtable's "two bugs that taught the same lesson" — quality posture has been load-bearing since the launch post and is not worth risking for a feature we don't believe in.
+- *We hold the headroom we said we'd hold.* The 05:35 rival-state entry noted: "if the next slice ships and Roundtable still hasn't moved, we have headroom for one or two more consolidating moves before re-examining whether to expand or call the project done." We have shipped two consolidating moves since then (printed-PDF metadata + landing-copy tighten). The reasonable read of the current state is now "call the project done" rather than "expand".
+
+**Reversible?** Yes — if Roundtable ships something that genuinely calls for a response, iteration can resume. The decision is "stop now", not "stop forever".
+
+**Retrospective post — angle, for the queue entry:** Engages the brief's four evaluation prompts in turn, briefly and honestly. What bets we made and why (single-device-together; in-page state only; arc as the unit; elicit-not-prescribe). How decisions evolved (the 01:40 hold-the-line on multi-device after the first rival check; the 02:40 second-arc pick over pacing; the 04:00 override of pacing in favour of take-aways; the 04:50 reactive small polish after Roundtable shipped print + clipboard; the 06:40 stop). Where Roundtable and Common Ground diverged and what it suggests (multi-device + simultaneous reveal vs. single-device + side-by-side; ephemeral-server vs. zero-server-text; static deck of five vs. arc-as-unit; their two acknowledged P0s vs. our PASS-streak). The advice line, in practice (no advice copy anywhere; no scoring or ranking; tagged items in original prompt order; no example take-aways). The decision trail — what it shows about reasoning under ambiguity (we picked simple-readings over clarifications, recorded reversals openly, deferred candidate features explicitly rather than dropping them, and revised provisional picks when the rival data warranted but held the architectural line when it didn't).
+
+**Not for the post:** Numbers we'd cherry-pick (test counts, post counts, timestamps). The point of the retrospective is reasoning, not scoreboard.
+
+---
+
+## 2026-05-01 06:30 — Accept landing-copy tighten; queue (small) post + run sixth rival check
+
+**Context:** Reviewer returned PASS on the landing-copy tighten (commit `240ac199`, wrangler version `dc56ac98-ce26-4002-9d42-94ae5d3b4bca`). 103/103 Playwright passing. Tests updated, not deleted (verified by diff against the prior commit: +43/-1 on `landing.spec.ts`, four new tests — privacy line, outcome/advice framing guard, heading hierarchy guard, plus the lede assertion preserved by *intent* rather than literal wording). New lede verbatim: *"Common Ground is a guided sitting for a household to talk about money together — pick one of two conversations, work through it side by side, then close with a shared reflection and a summary you can save."* Privacy line on the landing for the first time: *"Your answers stay on this device — nothing is sent to a server."*
+
+**Choice:** Accept. Queue a small release note. Run the sixth rival check. Hand to Writer.
+
+**Angle for the queued post:** Small. The landing now reflects what the product actually does — quote the new lede, name the new privacy line as a first-class statement on the landing rather than a buried claim. The Writer may judge this small enough to combine with whatever comes next, or to ship standalone. Pattern matches the printed-PDF metadata post.
+
+**Reversible?** N/A — release note records what happened.
+
+**Where we are vs. the brief:** Re-reading `BRIEF.md` against the current state. The MVP definition was met at 01:30. Since then we have shipped four extensions: closing reflection ("Worth coming back to"), second arc ("A big upcoming purchase"), take-aways ("Taking forward"), printed-PDF metadata polish, and now landing-copy tighten. Six published blog posts. Six product slices total. Roundtable has shipped three slices and four posts and has been frozen for two consecutive rival-check windows. The brief's evaluation criteria (decisions evolved, divergence with rival, advice-line handling, decision-trail under ambiguity) are well-served by the current decision log and post stream.
+
+**Provisional next directions, to refine after the sixth rival check:**
+- *A retrospective / project log post.* Not a slice — a Writer-driven post that engages the brief's evaluation criteria directly: how decisions evolved, where the divergence with Roundtable suggests something, the advice-line stance held in practice. This would be the strongest single artefact for the brief's own evaluation prompt. Could be queued without a corresponding code slice.
+- *Pacing affordances (the long-deferred candidate).* Small read-aloud cue or "going first" indicator. Defensible but cosmetic.
+- *Call the project done after the next consolidating move.* The brief invited "after MVP, you decide what to build next" and we have built four extension slices that all earn their place. There is a credible case for stopping iteration on the product and letting the decision trail and blog posts do the evaluation work.
+
+Default expectation: queue a retrospective post (no code slice), then sit on iteration unless the rival check forces a response. The rule "every PASS gets a post queued" only fires on Reviewer PASS — a retrospective post is not a PASS-triggered queue. Hold the call until the sixth rival check is in.
+
+---
+
+## 2026-05-01 05:30 — Accept printed-PDF metadata; queue (small) post + run fifth rival check
+
+**Context:** Reviewer returned PASS on the printed-PDF metadata polish (commit `1ee1ace`, source `c8caaee`, wrangler version `292b565b-84d8-48e7-8a96-5b4c139eed29`). 100/100 Playwright passing, including 11 new tests for this slice. Independent reviewer source review confirmed: `captureSummaryDateIfNeeded` only writes when the slot is unset; called solely from the take-aways → summary handler (not on print, not on every render); date format is en-GB long form; partner names joined with " and "; storage stays under the single `common-ground.session.v2` top-level key; the `.print-only` heading block is the first child of `#step-summary` (so print heading-area positioning is structural, not stylesheet-dependent).
+
+**Choice:** Accept. Queue a release-note entry — flag explicitly to the Writer that this slice is small and a one-paragraph post is appropriate; if their judgement is that the slice doesn't independently warrant a post, combining with the *next* slice's release note is acceptable. Run the fifth rival check before assigning the next task.
+
+**Reversible?** N/A — release note records what happened.
+
+**Provisional next direction (refine after fifth rival check):** **Landing-copy tighten** is the deferred candidate from the 04:50 entry. The landing page has not been revisited since the MVP and now sells the product short — three new product beats (closing reflection, second arc, take-aways) plus the printed-PDF polish are unannounced on the landing surface. A tight editorial slice that updates the value-prop paragraph, the CTA copy (now selecting between two arcs), and the supporting copy to reflect what the product actually does. Small, defensible, no flow changes. Pacing affordances and a third arc remain on the bench but neither has stronger pull than landing-copy at this point. Hold the call until rival data is in.
+
+---
+
+## 2026-05-01 04:50 — Pick "printed-PDF refinement" as next slice; defer landing-copy tighten
+
+**Context:** Fourth rival check (`coordination/rival-state.md` 04:45) shows Roundtable shipped clipboard copy + print since the third check, with their post title openly naming two P0 bugs. The artefact axis is now roughly equal between the two products. The 04:40 entry listed four candidates with a default lean toward printed-PDF refinement *or* landing-copy tighten. The new rival data tilts the call toward the former — they just stepped onto our turf on this axis and a small consolidating polish raises the bar without expanding scope.
+
+**Choice:** Next slice is a printed-PDF refinement on both arcs: add the **session date** and the **partners' names** prominently to the printed heading area, so a household with a stack of saved sessions can tell at a glance whose conversation, when, and which arc. No new state, no new screens — pure summary + print stylesheet work.
+
+**Rationale:**
+- *Direct response to a moved rival.* Roundtable just shipped print. We've had print since the MVP. A small polish on the same axis demonstrates that we keep iterating on what we already have rather than ignoring it once it ships.
+- *Genuine user value.* The current printed PDF names the arc in the heading but does not show the date or the partners' names anywhere prominent — a stack of two open-arc sessions a month apart is harder to tell apart than it should be.
+- *Tiny scope.* No new screens, no new sessionStorage fields, no new flow. The session already knows the partners' names (from setup) and a date can be derived at print time. A bit of layout and stylesheet work on the existing summary screen and print rules.
+- *Holds the privacy line.* Names already exist in `sessionStorage` per session; nothing new is being captured or transmitted.
+- *Quality posture maintained.* Roundtable just published two P0 bugs alongside their slice. We've held green PASSes across five Reviewer cycles. Picking a small slice now keeps that clean run going.
+
+**Working spec for the next task** (final shape locked in `current-task.md`):
+- On the printed PDF, the heading area names: the product name, the arc name (already there), the partners' names (e.g. "Astrid and Bram"), and the session date in long-form British style (e.g. "1 May 2026"). One stack-readable block of metadata, not a paragraph.
+- On the on-screen summary, the same metadata can appear in a smaller, less prominent line below the existing heading — engineer's call on whether to keep it or only print it. If on-screen, it must read sensibly without disrupting the existing layout.
+- The date is computed at the moment the summary is *first reached* (not at print time), so a household that views the summary, walks away, and prints later sees the same date that was on screen. Derive once, store in the per-arc `sessionStorage` slot.
+- Same constraints as before: no framework, no persistence beyond `sessionStorage`, no fetches, British English, mobile-readable.
+
+**Reversible?** Yes — purely additive metadata; can be revised or dropped without disturbing flow.
+
+**Defer:** Landing-copy tighten. Now genuinely worth doing (the landing has not been revisited since the MVP and now sells the product short with three new beats unannounced), but stacking it with this slice raises scope risk. Bring it back as the slice after this one if no new rival signal forces a change.
+
+---
+
+## 2026-05-01 04:40 — Accept take-aways; queue release note + run fourth rival check
+
+**Context:** Reviewer returned PASS on the take-aways slice (commit `6649e7e`, source `ce2f0fb`, wrangler version `5de5be4c-e026-4b3d-a050-12897c0ffda0`). 82/82 Playwright passing, plus an independent 7-test reviewer suite confirming the load-bearing claims (single `sessionStorage` top-level key, per-arc isolation across actual landing navigation, empty input placeholders with no anchoring example text, heading-ends-with-`?`, helper copy contains "skip" and no "e.g./for example/such as", print-DOM ordering strictly `#revisit-section` → `#takeaways-section` → `#summary-list`, zero non-GET requests through full purchase-arc flow). Section heading the engineer chose: **"Taking forward"** — plain, symmetrical with "Worth coming back to", in keeping with the brief.
+
+**Choice:** Accept the milestone. Queue a release-note style post. Run the fourth rival check before assigning the next task.
+
+**Angle for the queued post:** Release note. The session now has *two* household-authored beats at the close — "Worth coming back to" (things to return to) and "Taking forward" (things to walk away with). Frame this as a session that ends somewhere rather than ending at a record. Quote the new heading and section name verbatim. Keep the elicit-not-prescribe stance visible (no examples in the inputs, no scoring, partner-fixed order). Do not telegraph the next direction.
+
+**Reversible?** N/A — release notes record what happened.
+
+**Provisional next directions, to refine after the fourth rival check:**
+- *A short one-line "from this conversation" subtitle on the printed PDF.* If a household prints two PDFs (one open, one big-purchase), the heading already names the arc; a date and a short subtitle from the take-aways or worth-coming-back-to would make a stack of printed sessions more useful as a reference. Tiny slice; mostly print stylesheet work.
+- *Pacing affordances revisited.* The deferred candidate from the 03:30 / 04:00 entries. Smaller felt impact than the content beats already landed.
+- *A third arc for a recurring monthly check-in.* Doubles down on "arcs are the unit". Risk of feeling proliferative if the existing two are not yet well exercised.
+- *Tighten the landing copy.* The landing has not been revisited since the MVP. With three new product beats (closing reflection, second arc, take-aways), the value prop on the landing page is mildly understated. Could be a small editorial slice.
+Default expectation: lean toward the printed-PDF refinement or the landing-copy tighten — both small, both consolidating moves rather than expanding ones. Hold the call until the rival check is done.
+
+---
+
 ## 2026-05-01 04:00 — Override pacing; pick "anything you're each taking from this?" as the next slice
 
 **Context:** The 03:30 entry pencilled pacing affordances (read-aloud cues, "swap who goes first") as the likely next pick over a third arc. Third rival check (`coordination/rival-state.md` 03:35) shows Roundtable has not shipped since their MVP — no new pull on direction. Re-examining the candidate list before assigning, pacing is decoration; the stronger move is to add a new *content* beat to the session.

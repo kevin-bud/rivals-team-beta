@@ -12,6 +12,75 @@ Updated by the Orchestrator after each rival check. Most recent at top.
 
 ---
 
+## 2026-05-01 07:00 — Seventh check (rivals-team-alpha / "Roundtable") — out-of-cycle, triggered by Writer hand-back
+
+**Trigger:** The Writer flagged on hand-back that Roundtable's RSS now lists a fifth post that did not exist at the sixth check (06:35). Out-of-cycle rival check ran to verify before reversing decisions.
+
+**Product URL state:** Landing page copy *unchanged* from prior checks — they have shipped the product surface change but not yet tightened the landing copy to mention party size. Same single CTA, same KV/no-PII privacy stance, same disclaimer.
+
+**New post (verified verbatim from RSS):**
+- **"Two or more, taken at face value: Roundtable now seats 2–4"** — 2026-05-01. *New.*
+  Description (verbatim from feed): *"We've generalised Roundtable from a tool for two to a tool for two, three, or four — the first product axis we've picked"* (description text appears truncated in the feed). Their post's framing as relayed by the Writer who read it: *"the first product axis we've picked entirely on our own terms"* and *"Plurality went first because the brief said so plainly and we had not honoured it."*
+
+**Posts now total five** for Roundtable (versus our seven plus the just-shipped retrospective).
+
+**Implications — material:**
+- *Roundtable correctly diagnosed an axis we missed.* `BRIEF.md` reads: "A household of two or more adults who share some or all of their finances." Common Ground's setup screen, prompt copy ("you and your partner"), and entire data model all assume *exactly two*. We did not deliberately pick the two-only reading — we defaulted to it. Roundtable's diagnosis is honest and correct.
+- *This meets the bar set in decision-log entry 06:40.* That entry's reversibility note read: *"if Roundtable ships something that genuinely calls for a response, iteration can resume. The decision is 'stop now', not 'stop forever'."* This is that signal. It is not a re-litigation of architecture (where we hold the line); it is a brief-text axis we have not honoured. Resuming for one more slice is the right move.
+- *The retrospective post stands.* Written before this signal landed, the retrospective does not commentate on this Roundtable slice and is correct as it reads. The next blog post (after the next PASS) is where the partner-count slice and the rival's role in surfacing it get acknowledged.
+- *We are not chasing.* The architectural difference (single-device vs. multi-device, in-page vs. server-ephemeral, two-arc library vs. fixed deck) all hold. The partner-count extension is generalising along the brief's wording, not adopting Roundtable's design.
+
+---
+
+## 2026-05-01 06:35 — Sixth check (rivals-team-alpha / "Roundtable")
+
+**Product URL state:** Unchanged. Frozen across three consecutive rival-check windows now (fourth → fifth → sixth). Same product surface, same copy, same single CTA, same KV/no-PII privacy stance, same disclaimer. No second arc, no post-session capture beyond what landed at the fourth check.
+
+**Recent posts (RSS):** **No new entries** since the fourth check. Still four posts.
+
+**Implications:**
+- *Roundtable has visibly stopped iterating, at least for now.* Three frozen rival-check windows in a row is a stronger signal than one — they're either done or paused. Our move does not depend on which.
+- *No new pull on direction.* The 06:30 provisional pick (retrospective post over more iteration) holds and is in fact strengthened by another frozen window. No decision-log entry strictly required for this check, but a brief entry confirming the move from iteration to wrapping-up is useful for the decision trail.
+- *Position summary at end of sixth check:* Common Ground has shipped 7 PASS verdicts (landing → single-prompt → MVP six-prompt → closing reflection → second arc → take-aways → printed-PDF metadata → landing-copy tighten — that's 7 since the very first deploy, with the MVP at the third), 6 published blog posts and one small landing-copy post queued, 0 acknowledged P0s. Roundtable: 4 posts, 1 acknowledged-P0-paragraph in their fourth post, frozen for three rival windows. The brief's evaluation criteria (decisions evolved, divergence with rival, advice-line handling, decision-trail under ambiguity) are well-populated by our coordination files and posts. The strongest remaining single artefact would be a retrospective that engages those criteria explicitly — not a code slice.
+
+---
+
+## 2026-05-01 05:35 — Fifth check (rivals-team-alpha / "Roundtable")
+
+**Product URL state:** Unchanged from the 04:45 check. Same product surface, same copy, same single CTA, same KV/no-PII privacy stance, same disclaimer. No new framing, no new screens hinted at, no second arc, no post-session capture beyond what landed in their 04:45-era post. Verbatim tagline still: "It walks you through the topics together, keeps the conversation balanced, and captures what you decide. It is not a budget tool, not an advisor — just a structured way to have the talk you have been meaning to have."
+
+**Recent posts (RSS):** **No new entries since the fourth check.** Still four posts: "Project under way" (Apr 29), "Roundtable, and the join handshake that follows" (May 1), "MVP shipped: the deck of five and a working conversation" (May 1), and "A take-away on our terms, and two bugs that taught the same lesson" (May 1).
+
+**Implications:**
+- *Roundtable is now frozen for two consecutive rival-check windows* (between the third and fifth checks). In the same span we shipped the second arc, the take-aways step, and the printed-PDF metadata polish, with three release notes published and a fourth queued. Six product slices in total versus their three; six published posts in total versus their four.
+- *No new pull on direction.* The 05:30 provisional pick (landing-copy tighten) holds. No fresh rival data to weigh against it. No decision-log entry needed for this check.
+- *Possible reads of Roundtable's stall:* unchanged from the third-check note — either mid-build or done. Either way our move (consolidate by tightening the landing copy to reflect what we now have) is the right one regardless of which is true.
+- *Optionality kept:* if the next slice ships and Roundtable still hasn't moved, we have headroom for one or two more consolidating moves before re-examining whether to expand (a third arc, pacing affordances) or to call the project done.
+
+---
+
+## 2026-05-01 04:45 — Fourth check (rivals-team-alpha / "Roundtable")
+
+**Product URL state:** Landing page unchanged from prior checks. Same copy, same single CTA, same KV/no-PII privacy stance, same disclaimer. Still no surface hints of multiple session types or post-session capture features.
+
+**Recent posts (RSS):** *One new post since the third check.*
+1. **"A take-away on our terms, and two bugs that taught the same lesson"** — 2026-05-01. *New.* Per the description, they shipped clipboard copying and print functionality and then hit two P0 bugs that "taught the same lesson" about their development process. The title's phrasing ("on our terms") implies they had to engineer around their KV storage model to produce a save-the-conversation artefact — a privacy challenge we did not have because of our `sessionStorage`-only stance.
+2. **"MVP shipped: the deck of five and a working conversation"** — 2026-05-01. *Seen previously.*
+3. **"Roundtable, and the join handshake that follows"** — 2026-05-01. *Seen previously.*
+4. **"Project under way"** — 2026-04-29. *Seen previously.*
+
+**Key new observations:**
+- *Artefact axis caught up.* Roundtable now has print + clipboard copy of the session record. We have print-to-PDF as the save mechanism since the MVP. We are roughly equal on this axis now.
+- *Quality cost on their side.* Their post title openly names two P0 bugs landed during the artefact slice. Common Ground has held green PASS verdicts across five Reviewer cycles (35 → 49 → 62 → 68 → 82 Playwright tests, with independent reviewer suites added every time). Quiet differentiator; do not crow about it.
+- *No content-arc moves.* They still have the static deck of five, no post-session capture beyond export, no second arc. Our two content beats at the close (closing reflection + take-aways, both shipped today) remain differentiating on the conversational dynamic axis.
+
+**Implications:**
+- *Reprioritise the next slice.* The 04:40 decision-log entry left four candidates open with a default lean toward printed-PDF refinement OR landing-copy tighten, both consolidating moves. Roundtable's artefact shipment makes the printed-PDF refinement the more directly relevant of the two — they have just stepped onto our turf on this axis, and a small, defensible polish (date + partners' names visible in the printed heading) raises the bar on the same axis without expanding scope. Logging this in a fresh decision-log entry.
+- *Hold all other lines.* No pull on multi-device, no pull on a third arc, no pull on pacing. Privacy posture remains the cleanest single architectural difference between the two products.
+- *Possible blind spots still:* Roundtable's actual prompts (the deck of five) remain unseen by us — would require a two-device walkthrough. Defer; nothing about our next pick depends on knowing them.
+
+---
+
 ## 2026-05-01 03:35 — Third check (rivals-team-alpha / "Roundtable")
 
 **Product URL state:** Unchanged from the 02:35 check. Same copy ("A guided money conversation for households", "It walks you through the topics together, keeps the conversation balanced, and captures what you decide. It is not a budget tool, not an advisor — just a structured way to have the talk you have been meaning to have."), same single "Start a session" CTA, same KV/no-PII privacy stance, same disclaimer. No multiple-arc framing on their landing surface. No new copy. No new routes hinted at.
