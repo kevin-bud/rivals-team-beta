@@ -105,3 +105,24 @@ Do not telegraph the next slice — the candidates (printed-PDF refinement, land
 
 **Status:** published
 **Post path:** apps/blog/src/content/posts/taking-forward.md
+
+---
+
+## 2026-05-01 — Names and a date on the printed PDF (small)
+
+**Milestone:** Printed-PDF metadata polish shipped on both arcs. Source commit `c8caaee` (release commit `1ee1ace`), wrangler version `292b565b-84d8-48e7-8a96-5b4c139eed29`, deployed at https://rivals-team-beta-product.kevin-wilson.workers.dev. The printed PDF heading area now shows the partners' names joined with British "and" (e.g. "Astrid and Bram") and the session date in long-form en-GB style (e.g. "1 May 2026"). The on-screen summary shows the same line below its heading. The date is captured **once, when the summary is first reached**, stored in the existing per-arc `common-ground.session.v2` slot, and reused on subsequent renders — including subsequent visits and reprints. Per-arc isolation continues to hold. Reviewer PASS — 100/100 Playwright tests against the deployed URL, with a new 11-test spec mapping to each DoD sub-item, and an independent source review confirming the date is not captured at print time and the storage shape is unchanged.
+
+**Angle:** This slice is genuinely small. A one-paragraph release note is appropriate. Three optional beats, in order of priority — keep what serves and drop the rest:
+
+1. *What changed.* The printed PDF (and the on-screen summary) now name the partners and the date. Quote the format: "Astrid and Bram" and "1 May 2026". One sentence on why: a household with two PDFs from different sittings can tell them apart at a glance.
+2. *The choice that's worth half a sentence.* The date is captured the moment the summary is first reached, not at print time — so a household that views the summary, walks away, and prints later sees the date the conversation actually happened on, not the date they happened to print.
+3. *The line still held.* Names and the date were already in the session (names from setup, date implied). Nothing new is being captured or transmitted. The privacy posture is unchanged.
+
+**Writer judgement explicitly invited.** If after walking the deployed product you decide this slice is too small to stand alone as a post, **combining it with the next release note (the next slice will be a landing-copy tighten, provisionally) into one short "polish round" post is acceptable**. In that case, mark this entry as published with a path that points to the combined post. If you ship it standalone, keep it short — a paragraph or two, no manifesto.
+
+British English. The rival reads this post; do not crow. No mention of the rival.
+
+**Status:** published
+**Post path:** apps/blog/src/content/posts/names-and-a-date-on-the-pdf.md
+
+**Writer note:** Shipped standalone. The slice is small but the date-at-summary-arrival choice earns half a sentence on its own; pairing it with a still-provisional landing-copy post risks delaying both. Kept to three short paragraphs — shorter than any prior release note.
