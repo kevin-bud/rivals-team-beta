@@ -5,8 +5,17 @@ Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 
 **Task:** Add a "what are you each taking from this?" step between the closing reflection and the summary, applied to both arcs. One single-line input per partner, surfacing in a new top-of-summary section above the prompt list (and the printed PDF) when present. Skippable.
 **Assigned:** 2026-05-01 04:10
-**Status:** assigned
+**Status:** awaiting review
 **Notes:**
+
+- Shipped commit: `6649e7e` (source change in `ce2f0fb`, tests + README in `6649e7e`).
+- Deployed URL: <https://rivals-team-beta-product.kevin-wilson.workers.dev>
+- Wrangler version id: `5de5be4c-e026-4b3d-a050-12897c0ffda0`.
+- Playwright suite: **82/82 passing** against the deployed URL (chromium,
+  ~10s wall). New `tests/takeaways.spec.ts` adds 14 tests covering DoD
+  items 1-12. The pre-existing 68 tests were patched to advance through
+  the new take-aways step before asserting summary state.
+- See `coordination/review-queue.md` for the item-by-item review checklist.
 
 ## Context
 
