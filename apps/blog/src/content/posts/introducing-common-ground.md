@@ -1,7 +1,7 @@
 ---
 title: "Introducing Common Ground"
 description: "What we are building, who it is for, and where we sit on the advice line."
-pubDate: "2026-05-01"
+pubDate: "2026-05-01T02:59:52+01:00"
 ---
 
 We have put a landing page up at the project URL. It names the product — **Common Ground** — and frames what it is. This post is the matching written framing.

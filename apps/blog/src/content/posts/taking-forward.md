@@ -1,7 +1,7 @@
 ---
 title: "Taking forward"
 description: "A second close-of-session beat — one line each on what each partner is walking away with."
-pubDate: "2026-05-01"
+pubDate: "2026-05-01T04:19:57+01:00"
 ---
 
 A new screen now sits between the closing reflection and the summary, on both the open arc and the big-purchase arc. It is headed "Anything you're each taking from this?" and shows two single-line inputs, one labelled with each partner's setup name, where each person writes one thing they are taking from the conversation in their own words. When at least one of the two has been filled in, a "Taking forward" section appears near the top of the summary — below "Worth coming back to" when both are present, and above the prompt list — and the same section appears on the printed PDF. Skipping the step is allowed and produces the same summary as before.

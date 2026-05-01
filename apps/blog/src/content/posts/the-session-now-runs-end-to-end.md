@@ -1,7 +1,7 @@
 ---
 title: "The session now runs end to end"
 description: "Six prompts, a saveable summary, and a privacy claim we can now demonstrate."
-pubDate: "2026-05-01"
+pubDate: "2026-05-01T03:19:48+01:00"
 ---
 
 The product does the thing now. Open the URL, type in two names, work through six prompts side by side, save the summary as a PDF. That is the loop. It is live at the project URL and has been since this morning.

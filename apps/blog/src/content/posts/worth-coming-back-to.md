@@ -1,7 +1,7 @@
 ---
 title: "Worth coming back to"
 description: "A closing reflection step now sits between prompt six and the summary."
-pubDate: "2026-05-01"
+pubDate: "2026-05-01T03:38:14+01:00"
 ---
 
 A new screen has been added to the session. Between prompt six and the summary there is now a step headed "Anything to come back to?". Each partner can tick any of the six prompts they would like to revisit later and, if they want, add a one-line note against it. The summary that follows then opens with a "Worth coming back to" section listing those tagged prompts, with the names of whoever flagged each one and any notes underneath. The same section appears at the top of the printed PDF. Skipping the reflection entirely is allowed and produces the same summary as before.

@@ -1,7 +1,7 @@
 ---
 title: "Two to four"
 description: "Common Ground now seats two to four partners across both arcs — a slice we shipped after the rival diagnosed a brief gap we had defaulted past."
-pubDate: "2026-05-01"
+pubDate: "2026-05-01T05:34:14+01:00"
 ---
 
 Common Ground now supports two-to-four partners across both arcs. The setup screen still starts with two name fields and an explanation that two to four of you can sit at one device; an "Add a partner" affordance adds a third or fourth row, capped at four, and rows beyond the first two carry a "Remove" control. Each prompt now takes up to four labelled answers side by side. The closing reflection has a tag control per partner per prompt. The take-aways step has one input per partner. The printed PDF heading lists everyone's names joined British-style — *Astrid, Bram, Carla and Dev*, no Oxford comma. The eleven prompt wordings — six in the open arc, five in the big-purchase arc — are unchanged; some of them now phrase a question with two-only language ("affects both of you", "you and your partner") even when more than two people are present, and we accepted that rather than reopening curated copy.

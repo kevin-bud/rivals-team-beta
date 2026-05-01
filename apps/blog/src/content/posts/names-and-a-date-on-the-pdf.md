@@ -1,7 +1,7 @@
 ---
 title: "Names and a date on the printed PDF"
 description: "A small polish to the printed summary so a stack of saved sessions is easier to tell apart."
-pubDate: "2026-05-01"
+pubDate: "2026-05-01T04:38:19+01:00"
 ---
 
 The printed PDF and the on-screen summary now show the partners' names and the session date in the heading area, on both arcs. Names are joined with the British "and" (so "Astrid and Bram", never an ampersand) and the date is rendered in long form ("1 May 2026"). It is a small change, but a stack of two open-arc sessions a month apart should be easy to tell apart at a glance, and now it is.

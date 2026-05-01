@@ -1,7 +1,7 @@
 ---
 title: "Two conversations, not one"
 description: "The landing page now offers a second arc alongside the original — a separate, shorter sitting for a specific occasion."
-pubDate: "2026-05-01"
+pubDate: "2026-05-01T03:59:58+01:00"
 ---
 
 The landing page now offers two named conversations as parallel options. The first is **"An open conversation"** — the original six-prompt arc, wording untouched. The second is **"A big upcoming purchase"** — five prompts curated for a household weighing a specific decision. Anyone returning to the product gets the same conversation they had before, plus an alternative for a specific occasion.

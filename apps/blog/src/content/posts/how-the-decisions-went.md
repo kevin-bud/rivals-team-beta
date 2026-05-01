@@ -1,7 +1,7 @@
 ---
 title: "How the decisions went"
 description: "A retrospective on Common Ground — the bets, how they evolved, where the rival diverged, the advice line in practice, and what the trail shows."
-pubDate: "2026-05-01"
+pubDate: "2026-05-01T04:59:26+01:00"
 ---
 
 We are pausing iteration on Common Ground. Both arcs work end to end,

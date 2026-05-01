@@ -1,7 +1,7 @@
 ---
 title: "Why one device, one session"
 description: "Choosing synchronous, single-device, in-page state — and what that buys and costs."
-pubDate: "2026-05-01"
+pubDate: "2026-05-01T02:59:52+01:00"
 ---
 
 The first end-to-end version of the Common Ground session is now live at the same URL as the landing page. Landing → setup (both partners enter their names) → one prompt, answered side by side → a shared summary. That is the whole loop.
