@@ -140,3 +140,59 @@ Evidence:
 - Smoke test no longer asserts the stale "coming soon" string; it now confirms `/` and `/session` both return HTML 200 with "Common Ground" in the body. Both checks pass.
 - British English: `<html lang="en-GB">` on `/session`; copy uses "summarise"-style phrasing (no Americanisms in visible copy spotted on inspection).
 - Mobile readability: `<meta name="viewport" content="width=device-width, initial-scale=1" />`; `main { max-width: 38rem }`; at a 375px viewport the `main` bounding box is ≤375px (single column confirmed). Answers grid is single-column below 36rem and two-column above (CSS `@media (min-width: 36rem)`).
+
+---
+
+## 2026-05-01 — Six-prompt session arc + saveable summary shipped
+
+**Commit:** 38e2d5588f81bcfa8056aef2db1f17fa6d7f6c63 (with predecessor 66d3e12)
+**Deployed URL:** https://rivals-team-beta-product.kevin-wilson.workers.dev
+**Wrangler version ID:** 59972d66-01f9-4d6f-a260-e0128009f161
+
+**Claim:** The single-prompt session has been expanded to a curated six-prompt arc with progress indicator and back/next preserving previously entered answers. The summary screen lists all six prompts with named answers and renders skipped pairs with a subdued "(skipped)" treatment. A "Save as PDF" button triggers `window.print()`; a print stylesheet hides chrome (header eyebrow, nav, restart link, privacy notes, advisory footer) and surfaces a print-only header with product name + partners + date plus a single legible advisory footer line. State remains in `sessionStorage` only — no `fetch`/`XMLHttpRequest`/`sendBeacon` tokens in the served `/session` JS. Root README "How to use" rewritten to describe the real flow (open URL → enter names → six prompts → save summary) with a one-line privacy reiteration in British English.
+
+**Engineer evidence (already-verified preconditions):**
+- `pnpm --filter product run deploy` succeeded — version ID `59972d66-01f9-4d6f-a260-e0128009f161`.
+- `curl` against `/` and `/session` both returned HTTP 200.
+- `curl -s https://rivals-team-beta-product.kevin-wilson.workers.dev/session | grep -E 'fetch\(|XMLHttpRequest|sendBeacon'` returned no matches (clean). Same for `/`.
+- `curl -s .../session | grep -c "money decision coming up"` returned `1` (prompt 1 wording present verbatim).
+- Local Playwright run against the deployed URL: **26/26 passing in 3.3s** (`PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e`). Suite includes new tests covering verbatim six-prompt order, back-button preservation, edit-then-back preservation, advancing with empty answers, named summary, no `fetch`/`XHR`/`sendBeacon` in source, no network writes during a full flow, print emulation hiding chrome, and the print stylesheet being part of the served document.
+
+**What to verify on the deployed URL (Reviewer checklist):**
+
+Six prompts in order (verbatim wording — no rephrasing):
+1. "What's one money decision coming up in the next three months that affects both of you?"
+2. "When you think about money in your household right now, what feels good — and what feels uncertain?"
+3. "If a windfall of one month's take-home pay turned up tomorrow, no strings attached, what would each of you want to do with it?"
+4. "What's a recurring expense you'd like to talk about — bigger, smaller, or just understood differently — but haven't?"
+5. "Looking twelve months ahead, what's one thing about your money you'd like to feel more settled about?"
+6. "Is there something about money you wish your partner understood about how you grew up with it?"
+
+Confirm they appear in this exact order, advanced via the Next button, with a progress indicator reading "Prompt N of 6" at each step.
+
+Back/next preserves previously entered answers:
+- On prompt 1, the Back button is hidden. On prompts 2–6, Back is visible and returns to the previous prompt with both partners' previously typed answer text intact in the textareas.
+- Editing an answer on prompt N, advancing to N+1, then pressing Back, should still show the edited (post-edit) value — not a stale earlier value.
+- On prompt 6, the Next button reads "See summary" and routes to the summary screen.
+
+Skipped treatment on summary:
+- A prompt where both partner answers are empty must still appear on the summary, with a clearly subdued "(skipped)" tag in the heading row, the prompt text de-emphasised (`.summary-prompt.skipped`), and each empty answer cell rendered as `(skipped)` in italic muted text.
+- A prompt where one partner answered and the other did not should NOT be globally marked skipped; only the empty cell shows `(skipped)`.
+
+Print path produces a clean A4 PDF (suggest verifying with `await page.emulateMedia({ media: 'print' })` and asserting visibility):
+- The "Save as PDF" button (`#print-btn`) calls `window.print()`. Pressing it should not navigate or trigger any network request.
+- Under `print` media: the setup and prompt steps are hidden (`#step-setup`, `#step-prompt` set to `display: none`); the summary step is forced visible. Navigation chrome (`.no-print`, `.nav-row`, `.progress`, `.progress-bar`, `.privacy-note`, `.restart`, the header eyebrow, the on-screen advisory `<footer>`) is hidden.
+- A print-only header (`.print-only`) becomes visible and shows: the product name "Common Ground", an `<h1>` "A household money conversation", and a meta line of `partner names · date` (e.g. "Alex and Bea · 1 May 2026"). Date format is en-GB long form.
+- All six prompts render in the print output with both answers (or "(skipped)") and read cleanly on A4 (`@page { size: A4; margin: 18mm 16mm }`). Long answers wrap (`overflow-wrap: anywhere`) — no clipped text.
+- The advice disclaimer appears once, legibly (9pt, muted), as `.print-footer` at the end of the summary — NOT as the on-screen advisory `<footer>`, which is hidden in print.
+
+No-network-write guarantee under load:
+- `curl -s https://rivals-team-beta-product.kevin-wilson.workers.dev/session | grep -E 'fetch\(|XMLHttpRequest|sendBeacon'` returns zero matches.
+- During a complete flow (load `/session` → fill names → step through all six prompts with realistic answer text on at least 2 of them → click "See summary" → click "Save as PDF") record live network traffic. There must be zero `POST`/`PUT`/`PATCH`/`DELETE` requests, no request URL or body containing typed answer text, and no third-party requests of any kind. The only persistence is `sessionStorage` under key `common-ground.session.v1`.
+- The `Save as PDF` click in particular must not fire any request.
+
+Other:
+- Footer disclaimer on `/` unchanged. On `/session`, the on-screen advisory footer is visible across setup, prompt, and summary states (only hidden when print media is emulated).
+- `<html lang="en-GB">` on both routes; British English in copy ("dialogue", "summary", etc.).
+- Root README "How to use" reflects the new flow (open URL → enter names → six prompts → save summary) with a one-line privacy reiteration. Mention of browser print as the save mechanism present.
+- Mobile readability preserved: at 375px viewport the answers grid is single-column; at ≥36rem it goes two-column.

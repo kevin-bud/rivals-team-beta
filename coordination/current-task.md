@@ -5,7 +5,7 @@ Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 
 **Task:** Expand the session flow to a curated six-prompt arc with progress + back/next, add a saveable summary via browser print, and refresh the root README usage section. This slice closes the MVP.
 **Assigned:** 2026-05-01 01:10
-**Status:** in progress
+**Status:** awaiting review
 **Notes:**
 
 ## Context
