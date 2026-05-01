@@ -243,14 +243,29 @@ const sharedStyles = `
   .arc-choice a.cta {
     align-self: flex-start;
   }
-  section.about {
-    margin-top: 3rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--rule);
+  .privacy-note {
+    font-size: 0.95rem;
+    color: var(--muted);
+    margin: 0 0 2rem;
   }
-  section.about p {
-    margin: 0 0 0.75rem;
-    color: var(--fg);
+  ul.session-shape {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+    display: grid;
+    gap: 0.4rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  ul.session-shape li {
+    padding-left: 1rem;
+    position: relative;
+  }
+  ul.session-shape li::before {
+    content: "·";
+    position: absolute;
+    left: 0.25rem;
+    color: var(--muted);
   }
   footer {
     margin-top: 3.5rem;
@@ -810,7 +825,7 @@ const landingHtml = `<!doctype html>
     <title>Common Ground — a household money conversation, together</title>
     <meta
       name="description"
-      content="Common Ground helps a household have a productive conversation about their joint finances — together, in a single sitting."
+      content="Common Ground is a guided sitting for a household to talk about money together — two conversations to pick from, a closing reflection, and a summary you can save."
     />
     <style>${sharedStyles}</style>
   </head>
@@ -820,40 +835,34 @@ const landingHtml = `<!doctype html>
         <p class="eyebrow">Common Ground</p>
         <h1>A household money conversation, together.</h1>
         <p class="lede">
-          Common Ground helps a household have a productive conversation about
-          their joint finances — together, in a single sitting.
+          Common Ground is a guided sitting for a household to talk about money
+          together — pick one of two conversations, work through it side by
+          side, then close with a shared reflection and a summary you can save.
         </p>
         <p class="together">
-          Built for two or more people in a household to use side by side, not
-          a dashboard for one person to log in to alone.
+          Built for two or more people in a household to use side by side on
+          one device — not a dashboard for one person to log in to alone.
+        </p>
+        <p class="privacy-note">
+          Your answers stay on this device — nothing is sent to a server.
         </p>
       </header>
 
       <section aria-labelledby="choose-heading">
         <h2 id="choose-heading">Choose a conversation</h2>
         <p class="together">
-          Two arcs to pick from, both single-device and self-paced. Pick the
-          one that fits the sitting you're about to have.
+          Two arcs, both self-paced. Pick the one that fits the sitting you're
+          about to have.
         </p>
         <div class="arc-choices">
           ${ARCS.map(arcChoiceCard).join("\n")}
         </div>
+        <ul class="session-shape" aria-label="What's in a session">
+          <li>A handful of prompts you each answer, side by side.</li>
+          <li>A closing reflection — anything to come back to, anything to take forward.</li>
+          <li>A shared summary, on screen and saveable as a PDF.</li>
+        </ul>
         <p class="cta-note">One device, two people, no sign-up.</p>
-      </section>
-
-      <section class="about">
-        <h2>What it is</h2>
-        <p>
-          A guided sitting for a couple or household. You step through a small
-          set of structured prompts together, tag what you'd like to revisit,
-          and end with a shared summary you can save as a PDF.
-        </p>
-        <h2>What it isn't</h2>
-        <p>
-          Not a budgeting app, not an accountant, not an adviser. Common Ground
-          surfaces what your household already thinks. It does not tell you
-          what to do with your money.
-        </p>
       </section>
 
       ${advisoryFooter}
