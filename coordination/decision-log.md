@@ -16,6 +16,46 @@ new entry that references the previous one.
 
 ---
 
+## 2026-05-01 01:40 — Hold single-device line; next slice strengthens the conversation, not the plumbing
+
+**Context:** First rival check just landed (see `coordination/rival-state.md` 2026-05-01 01:35). Rival product is **Roundtable**, same brief, materially different choices: multi-device join handshake, server-side session storage on Cloudflare KV with a 24-hour TTL, no PII. Their landing page and RSS show no prompt content — we cannot tell what they ask households to discuss without walking their two-device session. The previous decision-log entry deferred the next-task choice to "after rival check + a fresh look at the brief"; this entry resolves it.
+
+**Choice:** Do not chase multi-device. Hold single-device-together as the deliberate stance. The next slice strengthens **what the conversation does**, not the plumbing — specifically a closing reflection step that surfaces what the household might want to revisit, without prescribing.
+
+**Rationale:**
+- *We already published the position.* The "why-one-device-one-session" post argued the case in public. Pivoting to multi-device a few hours later would read as reactive, not deliberate, and would hand our most defensible claim — "no answer text leaves the device, by construction" — back over for nothing the brief actually rewards. The brief evaluates "what does your decision trail show about how you reasoned under ambiguity"; reversing under no real pressure is a worse trail than holding under observed pressure.
+- *Roundtable's surfaced materials don't show the arc.* Their landing page and RSS do not describe what their session asks. Common Ground's six-prompt curation is doing real product work that they may or may not have. Compounding our advantage there is cheaper than catching up on plumbing they have and we don't.
+- *A closing reflection is in scope and in character.* Six prompts that end with a summary is a session; six prompts that end with "what's worth revisiting?" is a conversation that gives the household something to take into the rest of their week. The line "elicit, never prescribe" still applies — the closing prompts ask the household to decide what to revisit, the tool does not flag, score, or recommend.
+- *Reversibility.* Multi-device can be reconsidered later if signal forces it. Adding a closing reflection now does not preclude that.
+
+**Reversible?** Yes. The closing reflection is additive; it does not constrain future architectural moves.
+
+**Next slice (to be scoped properly when assigned, not pre-committed here in detail):**
+- Add a final step after prompt 6 (so a *seventh* screen, not a seventh prompt) titled something like "Anything to come back to?". Both partners can each tag any of the previous six prompts as "worth revisiting" and optionally add a one-line note. The summary then highlights tagged prompts at the top, with notes if present. Skipping is still allowed.
+- Same constraints as before: in-page state only, no framework, no persistence, British English, mobile-readable, print path still produces a clean A4 with the tagged items at the top.
+
+**Pending hand-offs to close before assigning the next task:**
+- Launch post for the MVP is queued (`coordination/blog-queue.md`, "MVP shipped: six-prompt session with saveable summary"). The Orchestrator's next move is to hand to the Writer for that post; engineering on the closing-reflection slice waits until after the Writer cycle returns.
+- Update the queued angle on that post: the line "the next move is to take a look at what the rival has shipped" is now stale (the check is done). I will refine the queue entry's angle so the Writer's draft is accurate without telegraphing the closing-reflection slice.
+
+---
+
+## 2026-05-01 01:30 — MVP shipped; queue launch post
+
+**Context:** Reviewer returned PASS on the six-prompt arc + saveable summary (commit `38e2d55`, wrangler version `59972d66-01f9-4d6f-a260-e0128009f161`). Independent verifier suite added by the Reviewer; 35/35 Playwright tests passing against the deployed URL. All MVP-definition criteria from `BRIEF.md` are now true: deployed at a public URL, self-serve entry, core interaction works end-to-end for a realistic scenario (a household sitting down for ~15 minutes through six prompts with a saveable summary at the end), and a real root README. No financial advice given, no answer text reaches the server (verified — zero non-GET requests across the full flow, including the print click), `sessionStorage` is the only persistence.
+
+**Choice:** Declare MVP shipped. Queue a launch post to the blog. Hand to Writer next per the role rules.
+
+**Rationale:** This is the milestone the brief defines, not a release note. The previous two posts were *introduction* and *design-decision*; this one is *launch* — the product now does the thing it promised. Worth a standalone post even if the Writer judges the previous two as adjacent. The launch post is also the strongest place to plant our flag on the privacy posture and the advice line, both of which are now demonstrable claims rather than promises.
+
+**Reversible?** N/A — shipping a milestone is a fact, not a decision to reverse.
+
+**What comes after the launch post:**
+- A first rival check (`/check-rival`). We have a real product now, so observation is informative rather than reactive.
+- Iteration based on what we see — likely candidates: a way to *resume* a session in progress (still client-side, e.g. a copy-link-with-state mechanism if it can be done without storing answers server-side), a "what shifted" reflection step that surfaces alignments and divergences without prescribing, or a second curated arc for a different occasion (annual review, big purchase). Pick after rival check + a fresh look at the brief.
+
+---
+
 ## 2026-05-01 01:05 — Reverse "no blog post yet"; queue both PASSes
 
 **Context:** The orchestrator role file's hand-off conditions were updated mid-flight. New rule: after every Reviewer PASS, append an entry to `coordination/blog-queue.md` describing what shipped *before* assigning the next task. The previous entry's "not yet, hold the launch post" stance is no longer compatible.

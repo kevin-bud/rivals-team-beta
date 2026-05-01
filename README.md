@@ -37,7 +37,12 @@ changes.)
    Each prompt has two labelled answer boxes — one per partner — and you
    can leave either or both empty. **Back** and **Next** carry your
    answers with you; nothing is final until you say so.
-4. End on a shared summary of all six prompts. Use **Save as PDF** to
+4. After prompt 6, take a moment together on the **"Anything to come
+   back to?"** screen. Each of you can tag any of the six prompts as
+   worth revisiting later — with an optional one-line note — or skip the
+   reflection entirely. Tagged prompts then appear in a **Worth coming
+   back to** section at the top of the summary.
+5. End on a shared summary of all six prompts. Use **Save as PDF** to
    trigger your browser's print dialogue and choose "Save as PDF" as the
    destination — that's how you keep a copy. Skipped prompts stay in the
    summary marked *(skipped)* so you can see what you passed over.

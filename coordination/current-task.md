@@ -3,111 +3,130 @@
 Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 `Status` field as work progresses.
 
-**Task:** Expand the session flow to a curated six-prompt arc with progress + back/next, add a saveable summary via browser print, and refresh the root README usage section. This slice closes the MVP.
-**Assigned:** 2026-05-01 01:10
-**Status:** awaiting review
+**Task:** Add a closing reflection step — a seventh screen (not a seventh prompt) where each partner tags any of the six prompts as "worth revisiting" with an optional one-line note. Tagged items appear at the top of the summary and the printed PDF.
+**Assigned:** 2026-05-01 02:00
+**Status:** assigned
 **Notes:**
 
 ## Context
 
-The single-prompt session flow is shipped (PASS on commit `f42ca71`).
-See the decision-log entry "Accept session slice; curate prompts and push
-to MVP" — it contains the binding choices for this task: six prompts
-(listed verbatim below), in-page state only, browser-native print as the
-save mechanism. Same hard rules as before — no framework, no persistence,
-no auth, no remote pairing.
+MVP is shipped (commit `38e2d55`, Reviewer PASS, launch post live). First
+rival check done — Roundtable went the opposite direction (multi-device,
+server-side KV with 24-hour TTL). The binding decision for what comes next
+is in `coordination/decision-log.md`, entry **2026-05-01 01:40 "Hold
+single-device line; next slice strengthens the conversation, not the
+plumbing"**. Read it before starting — it explains *why* the next slice
+is a closing reflection rather than a multi-device push or any other
+feature.
 
-After this lands and PASSes, the MVP definition is satisfied:
-- Public URL ✅ (already)
-- Self-serve sign-up (open the URL) ✅ (already)
-- Core interaction works end-to-end for at least one realistic scenario
-  ⏳ this task
-- Root README describing what it is, who for, how to use ⏳ this task
+The point of this slice: a session of six prompts ends with a *summary*;
+that's a record. A session that also asks "anything to come back to?"
+ends with something the household can take into the rest of their week.
+The tool elicits — it does not prescribe what to revisit, score, or rank.
 
 ## Definition of done
 
 All of the following must be true on the deployed URL,
 https://rivals-team-beta-product.kevin-wilson.workers.dev:
 
-1. The session flow now walks through these **six prompts in order**
-   (orchestrator-curated — use the wording verbatim, do not rephrase):
+1. **A seventh screen** is inserted between prompt 6 and the summary.
+   - Heading and copy of your choice in the spirit of *"Anything to come
+     back to?"* — your judgement on exact phrasing, but the framing must
+     be clear: the household is choosing what they each want to revisit
+     later, and skipping is a feature.
+   - For each of the six prompts, a row showing:
+     - The prompt text (truncated tastefully if long, or full — your call).
+     - A tag control for each partner (checkbox or toggle, labelled with
+       their name from setup, defaulting to off).
+     - A one-line note input per partner, only required to be visible/usable
+       once that partner has tagged the prompt — empty notes are allowed.
+   - A **Back** control returns to prompt 6 with all six prompt answers and
+     all tagging state preserved.
+   - A **See summary** control advances.
+   - It must be possible to advance with zero tags and zero notes — skipping
+     the whole reflection is fine.
 
-   1. *"What's one money decision coming up in the next three months that
-      affects both of you?"*
-   2. *"When you think about money in your household right now, what feels
-      good — and what feels uncertain?"*
-   3. *"If a windfall of one month's take-home pay turned up tomorrow, no
-      strings attached, what would each of you want to do with it?"*
-   4. *"What's a recurring expense you'd like to talk about — bigger,
-      smaller, or just understood differently — but haven't?"*
-   5. *"Looking twelve months ahead, what's one thing about your money
-      you'd like to feel more settled about?"*
-   6. *"Is there something about money you wish your partner understood
-      about how you grew up with it?"*
+2. **Summary screen update.**
+   - If any prompts have been tagged by either partner, a clearly distinct
+     **"Worth coming back to"** section appears at the top of the summary,
+     above the existing six-prompt list.
+     - Each tagged prompt appears once, with the partners who tagged it
+       labelled by name, and any notes shown beneath, again labelled.
+     - If both partners tagged the same prompt, both names show on that
+       row (and both notes if present).
+   - If no prompts are tagged, the summary renders exactly as before — no
+     empty section, no "(none)" placeholder.
+   - Existing skipped/answered behaviour for the six prompts in the lower
+     section is unchanged.
+   - "Start a new session" still clears all state, including tags and notes.
 
-2. The prompt screen shows:
-   - The current prompt and a clear progress indicator ("Prompt 3 of 6"
-     or equivalent — your call on exact wording).
-   - Two labelled answer text areas (with the partners' names from setup).
-   - A **Back** control on prompts 2–6 that returns to the previous
-     prompt with previously entered answers preserved.
-   - A **Next** control that advances; on prompt 6 it reads **See summary**.
-   - Empty answers remain allowed at every step. Skipping is a feature.
+3. **Print path.**
+   - The "Save as PDF" / `window.print()` button still works.
+   - The "Worth coming back to" section, when present, appears at the top
+     of the printed A4 output, in the same legible weight as the rest of
+     the summary content (not microscopic).
+   - Hidden chrome / disclaimer footer behaviour unchanged.
 
-3. The summary screen lists **all six prompts** with both partners'
-   answers labelled by name. Prompts with two empty answers should still
-   render the prompt with a clearly subdued "(skipped)" treatment so the
-   household can see what they passed over. A "Start a new session" link
-   clears state and returns to setup. The footer disclaimer remains.
+4. **Privacy posture preserved.**
+   - Tags and notes live only in `sessionStorage` — same model as answers.
+     No new persistence, no fetches that send tag/note text.
+   - Verify the served JS at `/session` (or wherever the seventh screen
+     lives) still contains zero `fetch(`/`XMLHttpRequest`/`sendBeacon`
+     tokens. If you split source files, check the bundled output too.
 
-4. **Saveable summary.** A "Save as PDF" (or "Print summary") button on
-   the summary screen triggers `window.print()`. A print stylesheet
-   ensures the printed/PDF output:
-   - Hides navigation/buttons/footer chrome.
-   - Shows the product name, the partners' names, the date, and all six
-     prompts with both answers (or "(skipped)").
-   - Reads cleanly on A4 with no clipped text.
-   - Does NOT include the advice disclaimer in microscopic print — it
-     should appear once, legibly, as a footer line.
+5. **Wording for the six prompts is unchanged.** Do not rephrase. Do not
+   add a seventh prompt. The reflection step references the existing six.
 
-5. **Privacy posture preserved.** Still no `fetch`/`XHR`/`sendBeacon` in
-   the served JS. State lives in `sessionStorage` only. The print path
-   must not exfiltrate answers anywhere.
+6. **British English** in all new copy.
+7. **Mobile-readable.** The reflection screen must work at 375px width
+   without horizontal scroll. A row per prompt is fine; consider stacking
+   the two partners' controls per row at narrow widths.
 
-6. **Root README usage section** updated. The current `README.md`
-   "how to use" section is a placeholder; replace it with a real
-   short description of the flow as it now stands (open URL → enter
-   names → six prompts → save summary). Mention browser print as the
-   save mechanism and reiterate the privacy posture in one line.
-   British English.
+8. **Tests.** Extend the Playwright suite to cover, against the deployed URL:
+   - Tagging works for either partner; tags persist across Back/Next.
+   - Skipping the reflection entirely (zero tags) renders the summary
+     exactly as it did pre-reflection (no extra section).
+   - Tagged prompts appear in the "Worth coming back to" section with
+     correct partner labels and notes.
+   - Print emulation shows the "Worth coming back to" section at the top
+     of the printed output when tags exist.
+   - Network watch through the full flow (six prompts + reflection +
+     summary + print click) shows zero non-GET requests.
 
-7. `pnpm --filter product deploy` succeeds and the deployed URL serves
-   the new flow end-to-end. Verify with curl on `/` and `/session` (or
-   whatever route(s) you use) and report what you ran.
+9. **README.** A small refresh to the "How to use" section so it mentions
+   the closing reflection step. One or two sentences. Don't bloat it.
 
-8. Append a fresh entry to `coordination/review-queue.md`: commit SHA,
-   deployed URL, and an explicit checklist for the Reviewer covering
-   the six prompts in order, back/next preservation, skipped-rendering
-   on summary, the print path producing a clean PDF (the Reviewer can
-   verify with Playwright's `page.emulateMedia({ media: 'print' })`),
-   and the no-network-write guarantee under load.
+10. `pnpm --filter product run deploy` succeeds (note: bare `pnpm --filter
+    product deploy` collides with pnpm 10's built-in deploy command — use
+    `run deploy`). Verify the deployed URL with `curl` on the routes you
+    use, and run the full Playwright suite against the deployed URL with
+    `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev
+    pnpm --filter product run test:e2e`. Report the version id and the
+    test count.
+
+11. Append a fresh entry to `coordination/review-queue.md`: commit SHA,
+    deployed URL, version id, and an explicit checklist for the Reviewer
+    covering each numbered DoD item above.
 
 ## Constraints / scope guard rails
 
-- **No framework.** Same as before. Inline JS or a small static asset
-  is fine. If your single Worker file is getting unwieldy, you may
-  split source under `apps/product/src/` (multiple TS files compiled
-  by wrangler) but the deploy stays a single Worker.
-- **No persistence.** No KV, D1, Durable Objects, cookies carrying
-  answers. `sessionStorage` only.
+- **No framework.** Same as before. If the single Worker file is getting
+  unwieldy you may split source under `apps/product/src/` (multiple TS
+  files compiled by wrangler) but the deploy stays a single Worker.
+- **No persistence.** No KV, D1, Durable Objects, cookies. `sessionStorage`
+  only. The privacy claim is now demonstrable in public — do not weaken it.
 - **No auth.** No accounts, no pairing.
-- **Six prompts exactly.** Do not add a seventh. Do not edit the wording.
-- **British English** in all UI copy and the README change.
-- **Mobile-readable** end-to-end. The summary on a phone should still
-  be legible without horizontal scroll.
-- **No blog post.** Writer is invoked by the Orchestrator only.
-- Do not edit `coordination/decision-log.md` (Orchestrator only) or any
-  blog content.
+- **No multi-device.** This is the deliberate stance per the 01:40
+  decision-log entry. Resist any temptation to add "share via link"
+  even if it seems harmless.
+- **No advice.** The reflection step asks the household what *they* want
+  to revisit. The tool does not flag, score, rank, recommend, or sort.
+  Tagged order should match the original prompt order, not any imputed
+  importance.
+- **British English** throughout.
+- **No blog post.** The Orchestrator queues posts at milestones; do not
+  edit anything under `apps/blog/`.
+- **Do not edit `coordination/decision-log.md`** — Orchestrator only.
 
 ## When done
 

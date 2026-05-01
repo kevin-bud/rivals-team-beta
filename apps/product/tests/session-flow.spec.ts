@@ -85,9 +85,10 @@ test.describe("Common Ground session flow", () => {
       } else {
         await expect(page.locator("#back-btn")).toBeVisible();
       }
-      // "See summary" only on prompt 6, otherwise "Next".
+      // "Reflect" only on prompt 6 (advancing into the reflection step),
+      // otherwise "Next".
       if (i === PROMPTS.length - 1) {
-        await expect(page.locator("#next-btn")).toHaveText("See summary");
+        await expect(page.locator("#next-btn")).toHaveText("Reflect");
       } else {
         await expect(page.locator("#next-btn")).toHaveText("Next");
       }
@@ -96,8 +97,14 @@ test.describe("Common Ground session flow", () => {
       }
     }
 
-    // Final next click goes to summary.
+    // Final next click goes to the reflection step (not the summary).
     await page.locator("#next-btn").click();
+    await expect(page.locator("#step-reflection")).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+    // Advancing past the reflection step lands on the summary.
+    await page.locator("#reflection-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -176,10 +183,17 @@ test.describe("Common Ground session flow", () => {
     await expect(page.locator("#label-a")).toHaveText("You's answer");
     await expect(page.locator("#label-b")).toHaveText("Your partner's answer");
 
-    // Click Next through all six prompts without typing anything.
+    // Click Next through all six prompts without typing anything, then
+    // advance past the reflection step (skipping with zero tags is a
+    // feature) to land on the summary.
     for (let i = 0; i < PROMPTS.length; i++) {
       await page.locator("#next-btn").click();
     }
+    await expect(page.locator("#step-reflection")).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+    await page.locator("#reflection-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -211,6 +225,7 @@ test.describe("Common Ground session flow", () => {
       }
       await page.locator("#next-btn").click();
     }
+    await page.locator("#reflection-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -256,6 +271,7 @@ test.describe("Common Ground session flow", () => {
       await page.locator("#answer-b").fill(`b${i}`);
       await page.locator("#next-btn").click();
     }
+    await page.locator("#reflection-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
@@ -314,10 +330,16 @@ test.describe("Common Ground session flow", () => {
       "does not provide financial, tax, legal, or investment advice",
     );
 
-    // Walk to summary.
+    // Walk to summary via the reflection step.
     for (let i = 0; i < PROMPTS.length; i++) {
       await page.locator("#next-btn").click();
     }
+    // Footer is also visible from the reflection step.
+    await expect(footer).toBeVisible();
+    await expect(footer).toContainText(
+      "does not provide financial, tax, legal, or investment advice",
+    );
+    await page.locator("#reflection-next-btn").click();
     await expect(footer).toBeVisible();
     await expect(footer).toContainText(
       "does not provide financial, tax, legal, or investment advice",
@@ -361,6 +383,7 @@ test.describe("Common Ground session flow", () => {
       await page.locator("#answer-b").fill(bText);
       await page.locator("#next-btn").click();
     }
+    await page.locator("#reflection-next-btn").click();
     await page.locator("#restart-link").click();
 
     expect(writeRequests, JSON.stringify(writeRequests, null, 2)).toEqual([]);
@@ -417,6 +440,7 @@ test.describe("Common Ground session flow", () => {
     for (let i = 0; i < PROMPTS.length; i++) {
       await page.locator("#next-btn").click();
     }
+    await page.locator("#reflection-next-btn").click();
     await expect(page.locator("#step-summary")).toHaveAttribute(
       "data-active",
       "true",
