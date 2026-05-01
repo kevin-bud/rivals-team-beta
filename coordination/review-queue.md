@@ -686,3 +686,56 @@ Evidence:
 
 Notes (non-blocking):
 - The wrangler version id provided in the queue entry (`dc56ac98-ce26-4002-9d42-94ae5d3b4bca`) is from the second of the two commits (`240ac19`, the CSS dedupe), which is correct — the editorial commit `3163041` introduced the new copy and tests, and `240ac19` is a follow-up cleanup of duplicated `.privacy-note` CSS rules. Both are deployed and reflected on the live URL. Heading count on the deployed page: 1 h1, 3 h2 (`Choose a conversation`, `An open conversation`, `A big upcoming purchase`). Sane.
+
+---
+
+## 2026-05-01 — Common Ground generalised to 2-to-4 partners
+
+**Commit:** 8d11c0c5b78655de11a984540a193ecc047258c0
+**Deployed URL:** https://rivals-team-beta-product.kevin-wilson.workers.dev
+**Wrangler version id:** 5b60a2a2-60fa-445f-9313-26a61a92c976
+**Claim:** Common Ground now supports 2 to 4 partners on both arcs. The setup screen has an "Add a partner" affordance and per-row "Remove" affordance for rows 3+. Per-arc state shape generalises: `partners` is a length-2-to-4 array of names, `answers`/`tags`/`notes` are arrays-of-arrays indexed by `[promptIndex][partnerIndex]`, `takeaways` is a length-N array — all under the existing `common-ground.session.v2` top-level key. The eleven prompt wordings are unchanged (per binding decision-log entry 2026-05-01 07:05). Existing 100+ Playwright tests at N=2 remain green; new specs cover N=3 and N=4 paths.
+
+**Reviewer checklist** — verify each item against the deployed URL and against the served HTML/JS. Items map 1:1 to the 17 numbered DoD items in `coordination/current-task.md`.
+
+1. **Setup screen.** Default has two name inputs labelled "Your name" and "Your partner's name" (placeholders "You", "Your partner"). The **Add a partner** secondary button (id `#add-partner-btn`, label literally "Add a partner") is visible at N=2 and N=3, and hidden + disabled at N=4. Pressing it adds row 3 and (one more press) row 4. Each newly added row is labelled "Partner 3's name" / "Partner 4's name" (placeholders "Partner 3" / "Partner 4"). Per-row **Remove** buttons (`.remove-partner-btn`) are present *only* on rows 3 and 4 — never on rows 1 and 2. Removing collapses to the previous count, restores the **Add a partner** button if it had been hidden, and never affects rows 1–2. At 375px width the setup screen at N=4 has `documentElement.scrollWidth ≤ clientWidth + 1` (no horizontal scroll). Empty names continue to advance.
+
+2. **Prompt screens.** N answer textareas per prompt, ids `#answer-a` … `#answer-d` for partners 1..N, with labels `#label-a`..`#label-d` reading "<name>'s answer". Container `#answers-list` carries `data-count="N"`. At desktop ≥ 36rem the layout is two-column for N=2 and 2×2 for N=3/N=4 (engineering judgement). At 375px the layout is single-column — `documentElement.scrollWidth ≤ clientWidth + 1` at N=4. Empty answers continue to advance.
+
+3. **Closing reflection.** Each row in `#reflection-list` carries N tag controls (`.reflection-tag`) labelled with the partner's resolved name (or fallback). The note-field is per-partner-per-prompt and only visible once that partner has tagged that prompt — toggling tag off hides the note (the typed text is preserved in storage). Mobile (375px) at N=4: layout wraps to two-by-two columns; type size never shrinks below the existing legible weights; no horizontal scroll. Skipping the entire reflection still works.
+
+4. **Take-aways step.** `#takeaways-form` renders N single-line `<input type="text">` controls (`#takeaway-a` .. `#takeaway-d`) labelled with the partner's name. Container has `data-count="N"`. All-blank still produces a summary identical to the pre-take-aways summary (no "Taking forward" section visible — `#takeaways-section[hidden]`).
+
+5. **Summary screen.** Each `.summary-prompt` block contains N `.summary-block` cells, each headed by the partner's name. `data-skipped="true"` only when ALL N cells are blank (per-partner `(skipped)` cells continue to render when only some are blank). "Worth coming back to": `tagged-by` line uses British conjunction joining — verbatim string examples to check are *"Astrid and Bram"* (N=2), *"Astrid, Bram and Carla"* (N=3), *"Astrid, Bram, Carla and Dev"* (N=4). No Oxford comma anywhere — grep the rendered text for `, and ` (comma-space-and-space) and assert no match. "Taking forward" lists one row per partner with a non-empty take-away in setup-order; blank take-aways produce no row. "Start a new session" clears the entire arc state (partner count → 2, names blank, all per-partner data wiped) for that arc.
+
+6. **Print path.** `.print-only h1` reads the same arc-named heading as before. The print metadata block (`#print-names`, `#print-date`) uses the same name-joining logic as the on-screen `#summary-names` line. Date format unchanged (en-GB long form). Per-arc print heading still names the arc.
+
+7. **State shape.** `JSON.parse(sessionStorage.getItem("common-ground.session.v2"))[arcId]` carries: `partnerCount` (number, 2–4); `partners` (length-N array of strings); `answers` (length-TOTAL array of length-N arrays of strings); `tags` (length-TOTAL array of length-N arrays of booleans); `notes` (length-TOTAL array of length-N arrays of strings); `takeaways` (length-N array of strings); `summaryDate` (string). Top-level key remains `common-ground.session.v2` — *no new top-level key was introduced* (`Object.keys(sessionStorage)` returns just that one). For backwards compatibility with existing N=2 test readers, the per-arc slot also includes mirror fields `nameA` / `nameB` — these are derived from `partners[0]` / `partners[1]` and not the canonical source.
+
+8. **Per-arc isolation.** Walking the open arc with 3 partners and then switching to the big-purchase arc from the landing produces a fresh setup for the big-purchase arc (default 2 partners, blank names, blank answers/tags/notes/take-aways). Verified by spec `partners-2-to-4.spec.ts` "Per-arc isolation across counts".
+
+9. **Privacy posture.** No new persistence beyond `sessionStorage`. Served JS at `/`, `/session?arc=open`, `/session?arc=purchase` contains zero `fetch(` / `XMLHttpRequest` / `sendBeacon` tokens. Network watch through both arcs end-to-end at N=2, N=3, and N=4 including the print click — zero non-GET requests. Verified by spec `partners-2-to-4.spec.ts` "Network watch: full N=4 flow on the open arc including print click — zero non-GET requests" plus the existing N=2 network-watch specs across `session-flow.spec.ts`, `arcs.spec.ts`, `reflection.spec.ts`, `takeaways.spec.ts`, `printed-pdf-metadata.spec.ts`, `second-arc-verifier.spec.ts`.
+
+10. **Eleven prompts unchanged.** No edits to any of the six open-arc prompts or five big-purchase-arc prompts. Verified by `arcs.spec.ts` "served session source for both arcs has no fetch/XHR/sendBeacon and the right prompts" (which asserts the verbatim wording of all eleven prompts is embedded in the served HTML for the correct arc and absent from the other arc). The "affects both of you" wording in open prompt 1 is unchanged — see binding decision-log entry 2026-05-01 07:05.
+
+11. **Landing copy.** `header .together` on `/` reads: *"Built for two or more people in a household to use side by side on one device — two to four of you can sit at it together, no dashboard for one person to log in to alone."* The cta-note now reads *"One device, two to four people, no sign-up."* The lede is unchanged. The privacy line is unchanged. The advice disclaimer in `<footer>` is unchanged. Existing landing-spec assertions ("two or more people", "household", privacy line text, no advice/coach framing, h1+h2 sanity) all remain green.
+
+12. **British English.** No Oxford comma in the on-screen `#summary-names`, `.tagged-by`, or `.print-meta-names` lines — `joinNames(["A","B","C","D"])` produces *"A, B, C and D"* (no `, and `). Fallback labels at empty names: at N=2, partners 1 and 2 fall back to "You" and "Your partner" (legacy). At N=3 or N=4, every partner with a blank name falls back to "Partner 1"…"Partner 4". `<html lang="en-GB">` is set on `/` and `/session*`. Spec `partners-2-to-4.spec.ts` "Empty names at N=3 fall back to 'Partner N' labels in downstream UI" verifies this.
+
+13. **Mobile-readable at 375px at N=4.** Verified across setup, prompt, reflection, take-aways. Specs:
+    - `partners-2-to-4.spec.ts` "Setup screen at N=4 fits 375px without horizontal scroll"
+    - "Prompt step at N=4 fits 375px without horizontal scroll"
+    - "Reflection at N=4 fits 375px width without horizontal scroll"
+    - "Take-aways step at N=4 fits 375px width without horizontal scroll"
+    All assert `documentElement.scrollWidth ≤ clientWidth + 1`.
+
+14. **Tests.** New file `apps/product/tests/partners-2-to-4.spec.ts` (23 specs) covers the N=3 and N=4 paths — add/remove affordances, hide-at-N=4, remove-only-on-rows-3+, full-flow at N=3 and N=4 on both arcs, British conjunction joining at N=3 / N=4 on both `.tagged-by` and `#summary-names` and `#print-names`, "Taking forward" at N=4 with mixed blanks, per-arc isolation across counts, network watch at N=4 with print click, mobile at 375px. The legacy reviewer-takeaways-verifier was updated to assert the new `takeaways` array shape (was `{a,b}` object, now length-N array) — this is the only assertion change in any pre-existing spec, and is mandated by DoD item 7. All other pre-existing N=2 specs (`landing.spec.ts`, `session-flow.spec.ts`, `six-prompt-arc-verifier.spec.ts`, `reflection.spec.ts`, `second-arc-verifier.spec.ts`, `takeaways.spec.ts`, `printed-pdf-metadata.spec.ts`, `arcs.spec.ts`, `smoke.spec.ts`) remain unmodified — backward compatibility at N=2 is the regression bar and it is held.
+
+15. **README.** "How to use" updated: step 2 now reads "Two to four of you can sit at one device for the conversation — the setup screen starts with two name rows and you can **add a partner** for a third or fourth." Step 3 updated to "one labelled answer box per partner". One-or-two-sentence change as the brief required. British English. The privacy section, advice disclaimer, and repo-layout sections are untouched.
+
+16. **Deploy + Playwright run.** `pnpm --filter product run deploy` succeeded — wrangler version id **5b60a2a2-60fa-445f-9313-26a61a92c976**. `curl -s -o /dev/null -w "%{http_code}"` against `/`, `/session?arc=open`, `/session?arc=purchase` all returned `200`. Full Playwright suite via `PRODUCT_URL=https://rivals-team-beta-product.kevin-wilson.workers.dev pnpm --filter product run test:e2e` — **126 passed** on chromium (15.0s). 23 of those are the new N=3/N=4 specs in `partners-2-to-4.spec.ts`; the remaining 103 are the pre-existing N=2 suite, all green.
+
+17. This entry is item 17.
+
+**Reviewer verdict:** _pending_
+

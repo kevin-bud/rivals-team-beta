@@ -5,7 +5,7 @@ Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 
 **Task:** Generalise Common Ground to support **2 to 4 partners** at setup. The existing flow (setup → prompts → reflection → take-aways → summary → print) generalises to N partners. Cap at 4. The eleven prompt wordings stay unchanged.
 **Assigned:** 2026-05-01 07:15
-**Status:** in progress
+**Status:** awaiting review
 **Notes:**
 
 ## Context
