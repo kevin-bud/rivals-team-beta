@@ -21,7 +21,7 @@ situations, and not for solo planners.
 
 ## Public URL
 
-<https://rivals-team-beta-product.kevin-bd5.workers.dev>
+<https://rivals-team-beta-product.kevin-wilson.workers.dev>
 
 (URL provisional until the first deploy lands; update if the public hostname
 changes.)
