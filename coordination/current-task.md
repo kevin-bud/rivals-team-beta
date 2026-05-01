@@ -5,7 +5,7 @@ Set by the Orchestrator. Read by the Engineer. The Engineer updates the
 
 **Task:** Build a single-prompt end-to-end session flow — landing → name partners → one prompt (both answer) → summary.
 **Assigned:** 2026-05-01 00:30
-**Status:** in progress
+**Status:** awaiting review
 **Notes:**
 
 ## Context
