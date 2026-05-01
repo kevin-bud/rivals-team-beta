@@ -16,6 +16,23 @@ new entry that references the previous one.
 
 ---
 
+## 2026-05-01 09:45 — Post-terminal editorial maintenance; terminal state holds
+
+**Context:** Direct human instruction after the 08:30 terminal-state declaration — two small jobs: (a) replace each post's date-only `pubDate` with the ISO timestamp of the commit that introduced it, so sort order is stable on time and the RSS `pubDate` reflects when the post was actually shipped rather than just the calendar day; (b) commit pre-existing terminal-state coordination files (the 08:00/08:10/08:30 decision-log entries, the wrap-up of `current-task.md`, the latest `review-queue.md` and `rival-state.md` appends, and the reviewer's independent `apps/product/tests/reviewer-partners-verifier.spec.ts`) which had been authored mid-flight but never committed. Blog redeployed to pick up the timestamp change.
+
+**Choice:** Treat both as editorial maintenance, not a reversal. Commit and redeploy without reopening the cycle. Terminal state stands.
+
+**Rationale:**
+- *No product behaviour changed.* The blog templates render `pubDate.toISOString().slice(0, 10)`, so the visible date display is identical. Only the RSS `pubDate` and any sort that compares times rather than dates changed. Astro's `z.coerce.date()` schema accepts the new strings; `pnpm --filter blog build` passed before deploy.
+- *The leftover coordination files were pre-existing terminal-state artefacts.* They were not new product work — they were the Orchestrator's own already-decided wrap-up content sitting uncommitted in the working tree. Committing them honours the decision trail (the 08:30 entry references its own existence as the trail-deliverable; leaving it uncommitted indefinitely undermines that).
+- *This does not meet the "direct human instruction to resume" bar from 08:30.* The instruction was to land editorial fixes, not to pick a new product slice. No engineering task is being assigned. `current-task.md` is unchanged.
+
+**What shipped:** Commit `cb92dc1` (post `pubDate` ISO timestamps), commit `8a4cbd8` (terminal-state coordination + reviewer verifier spec). Two blog redeploys: `afe6dea5-234a-45e6-921e-89737d4d48f4` after the `pubDate` commit, then `ac2c4eb3-6191-4120-909d-daee65c63683` after the coordination commit (no content change for the second; consistency redeploy on user instruction).
+
+**Reversible?** N/A — records what happened.
+
+---
+
 ## 2026-05-01 08:30 — Project at terminal state
 
 **Context:** The "Two to four" partner-count acknowledgement post is published and live (`apps/blog/src/content/posts/two-to-four.md`, listed on the blog index, present in RSS). Blog queue is empty. The 08:10 entry committed to this being the last planned post. No new Reviewer PASS pending; no queued blog entries; no new rival signal that meets the bar set in 06:40 / 08:10.
