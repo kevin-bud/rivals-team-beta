@@ -16,6 +16,68 @@ new entry that references the previous one.
 
 ---
 
+## 2026-05-01 08:30 — Project at terminal state
+
+**Context:** The "Two to four" partner-count acknowledgement post is published and live (`apps/blog/src/content/posts/two-to-four.md`, listed on the blog index, present in RSS). Blog queue is empty. The 08:10 entry committed to this being the last planned post. No new Reviewer PASS pending; no queued blog entries; no new rival signal that meets the bar set in 06:40 / 08:10.
+
+**Choice:** Declare terminal state. Stop assigning work. Update `coordination/current-task.md` to reflect that no task is in flight rather than leaving it stuck at the last "awaiting review".
+
+**Inventory at terminal state (for the brief's evaluation, not for boasting):**
+- *Product.* Two arcs ("An open conversation" / "A big upcoming purchase") supporting 2–4 partners; setup → prompts → closing reflection ("Worth coming back to") → take-aways ("Taking forward") → summary → printable A4 PDF with names + en-GB long-form date in the heading. Privacy posture: `sessionStorage`-only, no `fetch`/`XHR`/`sendBeacon` in served code, verified at every PASS. Advice line: no scoring, no ranking, no recommendation, no example placeholders, neutral arc selection, disclaimer on every page.
+- *Coordination artefacts.* `coordination/decision-log.md` (this file) — full reasoning trail with reversals (pacing → take-aways at 04:00; wrap-up → partner-count at 07:05; partner-count → wrap-up at 08:10) recorded openly. `coordination/rival-state.md` — eight rival checks, including one out-of-cycle triggered by a Writer hand-back. `coordination/review-queue.md` — every PASS verdict with independent reviewer evidence. `coordination/blog-queue.md` — every milestone queued and resolved.
+- *Public posts (eight in total).* `introducing-common-ground` / `why-one-device-one-session` (introduction + design-decision); `the-session-now-runs-end-to-end` (launch); `worth-coming-back-to`, `two-conversations-not-one`, `taking-forward`, `names-and-a-date-on-the-pdf` (release notes); `how-the-decisions-went` (retrospective); `two-to-four` (final partner-count acknowledgement).
+
+**What does *not* trigger another reversal:**
+- Roundtable shipping further posts that catch up on axes we are already on (closing-collaboration beat, retrospective, advice-line audit) — covered in the 08:10 entry.
+- The lede on our landing not naming partner-count — covered in the 08:10 entry.
+- The phrase "affects both of you" in open prompt 1 reading slightly rough at N=3/4 — covered in the 07:05 binding decision and 08:00 acceptance.
+- General "could we polish more" energy — explicitly out of scope per 06:40 and 08:10.
+
+**What *would* trigger another reversal** (recorded so the bar is legible):
+- A rival shipment that names a brief-text gap *we* genuinely have and have not addressed (the 07:05 standard).
+- A regression in a deployed slice that the Reviewer would catch on a rerun (would re-open as a fix, not an expansion).
+- A direct human instruction to resume.
+
+**Final note for any future cycle of this conversation that re-reads this log:** the project was a deliberate exit, not a stop. The decision trail is the deliverable.
+
+---
+
+## 2026-05-01 08:10 — Re-close wrap-up; partner-count post is the last
+
+**Context:** Eighth rival check (`coordination/rival-state.md` 08:05) found three new Roundtable posts: a closing-collaboration beat ("one shared sentence after the deck"), their own retrospective, and an "advice-line audited and locked in" automated-testing post. Two related questions to answer in this entry: (a) does any of this trigger another reversal? (b) what is the project's terminal state?
+
+**Choice:**
+1. **No reversal.** None of the three Roundtable posts meet the bar set in 06:40 ("genuinely calls for a response") or the standard the 07:05 reversal honoured (a brief-text gap we missed). Their close-of-session beat catches up to an axis we are already ahead on (two close beats vs. their one); their retrospective is parallel work; their advice-line automation is a consolidation we already have through scattered specs without the consolidation, and copying their move would be motivated by visible parity rather than any real gap.
+2. **The partner-count post is the last.** Once it is published, the project is at terminal state. The blog queue will be empty. Both arcs work end-to-end at 2–4 partners, all close beats land, the printed PDF is informative at all N, the privacy posture is demonstrable, the landing reflects the product (with partner-count surfaced in a supporting line per the engineer's slice), and the decision log + rival-state + retrospective + per-slice posts are the evaluation-ready artefacts for the brief.
+3. **Optional final small polish, NOT taken:** the engineer flagged that the lede on the landing does not name partner-count even though a supporting line does. We could open another small editorial slice to surface partner-count more prominently in the lede. Decline. The lede is *"Common Ground is a guided sitting for a household to talk about money together — pick one of two conversations, work through it side by side, then close with a shared reflection and a summary you can save."* That is accurate at 2–4 partners (the phrase "together" carries plural usefully). Adjusting it would be motivated by visible parity with where Roundtable is *not* either, not by accuracy. Hold.
+
+**Rationale:**
+- *We held one architectural reversal-resistance posture and one brief-text-axis honouring in the same day.* That asymmetry is the whole point: architectural choices are made deliberately and held; brief-text gaps are accepted and closed. The decision trail shows both behaviours, and shows the difference. Adding a third "we noticed Roundtable did X, we matched it" slice would muddy the trail.
+- *Marginal value of further work is low.* Same logic as 06:40, now confirmed by the 07:05 reversal having been the only justifiable expansion. We do not believe in a further slice.
+- *Roundtable also moved into wrap-up.* Both teams have published retrospectives. The brief evaluates the comparative decision trail; both trails are now legible.
+
+**Reversible?** In principle yes. In practice this is the second wrap-up declaration in two hours; another reversal would require a stronger trigger than any of the three new Roundtable posts present.
+
+**What the Orchestrator does next:**
+- Refine the queued partner-count post's angle so the Writer can lightly note the rival's parallel wrap-up if it lands naturally — without making this post a comment on Roundtable's three latest posts. The angle remains primarily about our reversal and what we shipped.
+- Hand to Writer. After the post lands, the project is at terminal state. The role's hand-off rules will not generate any further work without a new PASS, which will not occur unless iteration resumes.
+
+---
+
+## 2026-05-01 08:00 — Accept 2–4 partner generalisation; queue acknowledgement post + run eighth rival check
+
+**Context:** Reviewer returned PASS on the partner-count generalisation (wrangler version `5b60a2a2-60fa-445f-9313-26a61a92c976`). 130/130 Playwright passing — engineer's 126 plus four independent reviewer-verifier specs covering the load-bearing concerns (storage shape probe, per-arc isolation across N-change, N=4 print emulation, N=4 mobile reflection at 375px). Eleven prompt wordings byte-identical. Privacy posture intact. The Reviewer flagged two non-blocking notes about engineer mis-statements regarding which test files were "updated" vs newly added — neither affects the verdict; worth noting for future engineer hand-offs but not worth blocking on.
+
+**Choice:** Accept. Queue a release-note post that **explicitly acknowledges the rival's role in surfacing the brief gap** — this is part of the decision trail the brief evaluates. Run the eighth rival check (Roundtable may have shipped more). Hand to Writer.
+
+**Why this post is different from prior release notes:** It is a release note for a slice that was triggered by a competitor's correct critique of a brief gap we missed. The honest framing is: Roundtable diagnosed the "two or more adults" gap, we agreed, we shipped. The post should not pretend we got there independently. It should also not be self-flagellating — we held the architectural line, we were not on autopilot, the reversal was deliberate and recorded. The retrospective post that went up 07:00-ish stands as-is; this new post is its acknowledged sequel.
+
+**Reversible?** N/A — release note records what happened.
+
+**Provisional next direction (refine after eighth rival check):** Per the 07:05 entry, the reversal of wrap-up was for **one more slice** — this one. With this slice shipped and PASSed, the natural move is to re-close the wrap-up: stop iterating again unless the eighth rival check surfaces a new substantive trigger. Possible candidates if iteration *did* resume (none currently picked): a small landing-copy adjustment to mention partner-count more prominently than the engineer's tight in-paragraph add (the engineer flagged in their summary that the supporting line names the range, but the lede does not). Otherwise, after the post for this slice ships, the project state is "wrapped" — both arcs work end-to-end at 2–4 partners, all close beats land, the privacy posture is demonstrable, the landing is honest about scope, and the decision log + retrospective + per-slice posts are the evaluation-ready artefacts.
+
+---
+
 ## 2026-05-01 07:05 — Reverse 06:40 wrap-up; honour the brief's "two or more adults"
 
 **Context:** Out-of-cycle seventh rival check (`coordination/rival-state.md` 07:00) verified a Roundtable post the Writer surfaced on hand-back: *"Two or more, taken at face value: Roundtable now seats 2–4."* They have generalised their product from two to two-three-or-four partners. Their own framing: *"Plurality went first because the brief said so plainly and we had not honoured it."* That is also true of Common Ground. The brief reads "A household of two or more adults"; our setup, prompt copy ("you and your partner"), and entire data model assume exactly two. We did not deliberately pick the two-only reading — we defaulted to it.

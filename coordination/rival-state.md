@@ -12,6 +12,27 @@ Updated by the Orchestrator after each rival check. Most recent at top.
 
 ---
 
+## 2026-05-01 08:05 — Eighth check (rivals-team-alpha / "Roundtable")
+
+**Product URL state:** Landing page copy *still* unchanged. They shipped the 2–4 product change at the seventh check and have not yet tightened the landing copy to reflect it. Same single CTA, same KV/no-PII privacy stance, same disclaimer.
+
+**Three new posts since the seventh check (verbatim from RSS):**
+1. **"One last thing — together: a single shared sentence after the deck"** — 2026-05-01. They added a *closing-collaboration beat* after their five-prompt deck: a single shared sentence "anyone present can write or revise." This is the conceptual axis our closing reflection ("Worth coming back to") and take-aways ("Taking forward") have been on since the second slice — Roundtable has now caught up to that axis with a different mechanic (collaborative shared sentence vs. per-partner inputs). Different theory of the close-of-session dynamic; same recognition that ending at a record alone is not enough.
+2. **"Retrospective: what we built today, what we didn't, and why"** — 2026-05-01. *Their* retrospective. RSS description references "deliberate non-choices and two shipped bugs, plus how Roundtable diverged from a competing product." They have also moved into wrap-up mode.
+3. **"The advice line, audited and locked in"** — 2026-05-01. They added *automated testing* for the advice-line boundary, citing "implicit evidence" approach.
+
+**Total post count:** Roundtable now at eight; Common Ground at seven published with one queued (pre-this-check; the partner-count post is being handed to the Writer next, taking us to eight on parity).
+
+**Implications — does this trigger another reversal?**
+- *Closing-collaboration beat.* Roundtable catching up to the close-of-session axis is significant but does not call for a response. We are *ahead* on this axis (two close beats — reflection + take-aways — vs. their one shared sentence). Building a third close beat to stay ahead would be expanding for expansion's sake. Hold.
+- *Their retrospective.* Parallel work. Both teams have now produced a retrospective. Their having one does not require us to revise ours. Hold.
+- *Their advice-line automated audit.* Worth considering. We do hold the advice line through design choices (no scoring, no ranking, no examples in inputs, neutral arc selection) and our test suite already enforces several specific guards (the landing-copy outcome-claims/advice-framing guard from the 240ac199 slice, the no-fetch grep, the no-example-placeholder assertions in the take-aways spec). We do *not* have a single named "advice-line guard" spec that consolidates these. Could add one in a small slice. **But:** what they describe is "implicit evidence" + automated testing, which is roughly what we have without the consolidation. The marginal value of a consolidating slice is low and would be motivated entirely by visible parity rather than by any actual gap. Hold.
+- *Their landing still doesn't mention partner count.* Mirror of our own gap (engineer's commit added a tight in-paragraph mention but did not rewrite the lede). Symmetric. Not a trigger.
+
+**Net read:** No reversal. The partner-count slice was the one extension justified by a brief-text gap; nothing in this check meets that bar. Re-close wrap-up.
+
+---
+
 ## 2026-05-01 07:00 — Seventh check (rivals-team-alpha / "Roundtable") — out-of-cycle, triggered by Writer hand-back
 
 **Trigger:** The Writer flagged on hand-back that Roundtable's RSS now lists a fifth post that did not exist at the sixth check (06:35). Out-of-cycle rival check ran to verify before reversing decisions.
