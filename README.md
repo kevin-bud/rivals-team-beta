@@ -39,13 +39,16 @@ changes.)
      what it would change about your day-to-day, what you'd trade for
      it, what would make it feel comfortable, and where you'd each like
      to be in twelve months.
-2. Pop in both partners' names so the prompts and summary can address
-   each of you. Each arc keeps its own answers — switching between them
-   from the landing page does not mix the two.
-3. Step through the chosen arc's prompts. Each prompt has two labelled
-   answer boxes — one per partner — and you can leave either or both
-   empty. **Back** and **Next** carry your answers with you; nothing is
-   final until you say so.
+2. Pop in each partner's name so the prompts and summary can address
+   each of you. Two to four of you can sit at one device for the
+   conversation — the setup screen starts with two name rows and you
+   can **add a partner** for a third or fourth. Each arc keeps its
+   own answers — switching between them from the landing page does
+   not mix the two.
+3. Step through the chosen arc's prompts. Each prompt has one labelled
+   answer box per partner, and you can leave any of them empty.
+   **Back** and **Next** carry your answers with you; nothing is final
+   until you say so.
 4. After the final prompt of either arc, take a moment together on the
    **"Anything to come back to?"** screen. Each of you can tag any of
    that arc's prompts as worth revisiting later — with an optional

@@ -34,13 +34,16 @@ test.describe("Reviewer — take-aways slice (independent)", () => {
     );
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw ?? "{}");
-    // Per-arc shape: open arc carries a takeaways {a, b} object.
+    // Per-arc shape: open arc carries a takeaways array, indexed by
+    // partner. Two partners by default → length-2 array. The N-partner
+    // generalisation (DoD 2026-05-01 07:15) replaced the legacy {a,b}
+    // object shape with an array.
     expect(parsed.open).toBeDefined();
     expect(parsed.open.takeaways).toBeDefined();
-    expect(parsed.open.takeaways).toEqual({
-      a: "Independent A take-away",
-      b: "Independent B take-away",
-    });
+    expect(parsed.open.takeaways).toEqual([
+      "Independent A take-away",
+      "Independent B take-away",
+    ]);
     // No top-level takeaways key.
     expect(parsed.takeaways).toBeUndefined();
   });
